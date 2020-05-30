@@ -6,6 +6,9 @@ cache: npm
 before_install:
   - export TZ='Asia/Shanghai'
   - sed -i'' "s~https://github.com/vqianxiao/blog.git~https://${GH_TOKEN}@github.com/vqianxiao/blog.git~" _config.yml
+install:
+  - npm install hexo-cli -g
+  - npm install
 branches:
   only:
     - master # build master branch only
