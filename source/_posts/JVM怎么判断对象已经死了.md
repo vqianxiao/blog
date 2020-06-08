@@ -1,6 +1,12 @@
-## JVM 怎么判断对象已经死了？
+---
+layout:    post
+title:     JVM怎么判断对象已经死了
+category:  JVM
+description: 在JVM中是如何判断对象已经死亡的呢
+tags: JVM
+---
 
-> 本文转载自 https://mp.weixin.qq.com/s/bPexDXkSJ0T4vQnmWMsoZQ 因为觉得写的蛮好
+> 本文转载自 https://mp.weixin.qq.com/s/bPexDXkSJ0T4vQnmWMsoZQ 
 
 GC的历史比Java还要久远，我们在思考GC时候需要思考三个问题：
 
