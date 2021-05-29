@@ -16,6 +16,7 @@ before_install:
 script:
   - hexo clean
   - hexo generate # generate static files
+  - hexo d
 deploy:
   provider: pages
   skip-cleanup: true
