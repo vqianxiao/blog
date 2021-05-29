@@ -4,13 +4,11 @@ node_js:
   - 10 # use nodejs v10 LTS
 cache:
   directories:
+    - npm
     - node_modules
 branches:
   only:
     - master # build master branch only
-before_script:
-  - npm install -g hexo-cli
-  - npm install
 script:
   - hexo clean
   - hexo generate # generate static files
