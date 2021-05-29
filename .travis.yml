@@ -10,12 +10,6 @@ branches:
     - master # build master branch only
 before_script:
   - npm install -g hexo-cli
-  - mkdir themes
-  - git clone https://github.com/theme-next/hexo-theme-next themes/next
-  - cd thems/next
-  - git pull
-  - npm install --production # 安装 主题的依赖
-  - cd ../..
   - npm install
 script:
   - hexo clean
