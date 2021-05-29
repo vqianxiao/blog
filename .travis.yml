@@ -1,22 +1,14 @@
-sudo: required
+sudo: false
 language: node_js
 node_js:
-  - 10 # use nodejs v10 LTS
-cache:
-  directories:
-    - npm
-    - node_modules
+  - 16.2.0 # use nodejs v10 LTS
+cache: npm
 branches:
   only:
     - master # build master branch only
-before_install:
-  - npm install -g hexo-cli
-  - npm install
-  - npm install hexo-deployer-git --save
 script:
   - hexo clean
   - hexo generate # generate static files
-  - hexo d
 deploy:
   provider: pages
   skip-cleanup: true
