@@ -4,6 +4,7 @@ title:     JVM怎么判断对象已经死了
 category:  JVM
 description: 在JVM中是如何判断对象已经死亡的呢
 tags: JVM
+date: 2021/05/29 13:26:10
 ---
 
 > 本文转载自 https://mp.weixin.qq.com/s/bPexDXkSJ0T4vQnmWMsoZQ 
