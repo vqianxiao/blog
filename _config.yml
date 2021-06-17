@@ -97,16 +97,8 @@ ignore:
 # Extensions
 ## Plugins: https://hexo.io/plugins/
 ## Themes: https://hexo.io/themes/
-#theme: landscape
-theme: next
-theme_config:
-  post_meta:
-    item_text: true
-    created_at: true
-    updated_at:
-      enable: false
-      another_day: false
-    categories: true
+theme: landscape
+#theme: next
 
 # Deployment
 ## Docs: https://hexo.io/docs/one-command-deployment
