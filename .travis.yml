@@ -13,7 +13,7 @@ branches:
   only:
     - master # build master branch only
 script:
-#  - hexo clean
+  - hexo clean
   - hexo generate # generate static files
 deploy:
   provider: pages
@@ -23,3 +23,5 @@ deploy:
   on:
     branch: master
   local-dir: public
+git:
+  depth: false
