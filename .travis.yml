@@ -7,7 +7,6 @@ cache:
     - node_modules
 before_script:
   - npm install -g hexo-cli
-  - hexo -version
   - mkdir themes
   - git clone https://github.com/theme-next/hexo-theme-next themes/next
 branches:
@@ -15,7 +14,7 @@ branches:
     - master # build master branch only
 script:
   - hexo clean
-  - hexo generate # generate static files
+  - hexo deploy # generate static files
 deploy:
   provider: pages
   skip-cleanup: true
