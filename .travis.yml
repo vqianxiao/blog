@@ -14,7 +14,8 @@ branches:
     - master # build master branch only
 script:
   - hexo clean
-  - hexo deploy # generate static files
+  - hexo generate # generate static files
+  - hexo deploy
 deploy:
   provider: pages
   skip-cleanup: true
