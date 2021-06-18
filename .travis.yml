@@ -9,6 +9,7 @@ before_script:
   - npm install -g hexo-cli
   - mkdir themes
   - git clone https://github.com/theme-next/hexo-theme-next themes/next
+  - find source/_posts -name '*.md' | while read file; do touch -d "$(git log -1 --format="@%ct" "$file")" "$file"; done
 branches:
   only:
     - master # build master branch only
