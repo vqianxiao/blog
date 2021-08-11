@@ -20,40 +20,18 @@ Iterable是一个遍历接口，提供了获取迭代器的方法，集合可以
 ArrayList的属性
 
 ```java
-		/**
- * Default initial capacity.
- */
 //默认容量大小
 private static final int DEFAULT_CAPACITY = 10;
 
-/**
- * Shared empty array instance used for empty instances.
- */
 //空集合的空实例
 private static final Object[] EMPTY_ELEMENTDATA = {};
 
-/**
- * Shared empty array instance used for default sized empty instances. We
- * distinguish this from EMPTY_ELEMENTDATA to know how much to inflate when
- * first element is added.
- */
 //默认大小的空实例 和EMPTY_ELEMENTDATA 不同是为了知道添加第一个元素的时候需要膨胀多少
 private static final Object[] DEFAULTCAPACITY_EMPTY_ELEMENTDATA = {};
 
-/**
- * The array buffer into which the elements of the ArrayList are stored.
- * The capacity of the ArrayList is the length of this array buffer. Any
- * empty ArrayList with elementData == DEFAULTCAPACITY_EMPTY_ELEMENTDATA
- * will be expanded to DEFAULT_CAPACITY when the first element is added.
- */
 //就是集合中的数组元素
 transient Object[] elementData; // non-private to simplify nested class access
 
-/**
- * The size of the ArrayList (the number of elements it contains).
- *
- * @serial
- */
 //集合中元素的个数
 private int size;
 ```
@@ -62,9 +40,9 @@ private int size;
 
 ```java
 public boolean add(E e) {
-        ensureCapacityInternal(size + 1);  // Increments modCount!!
-        elementData[size++] = e;
-        return true;
+  ensureCapacityInternal(size + 1);  // Increments modCount!!
+  elementData[size++] = e;
+  return true;
 }
 ```
 
@@ -72,45 +50,45 @@ public boolean add(E e) {
 
 ```java
 private void ensureCapacityInternal(int minCapacity) {
-        ensureExplicitCapacity(calculateCapacity(elementData, minCapacity));
+  ensureExplicitCapacity(calculateCapacity(elementData, minCapacity));
 }
 
 //计算容量
 private static int calculateCapacity(Object[] elementData, int minCapacity) {
-  			//这里如果是无参构造器创建的数组 那么在第一次插入数据的时候 就可以把数据扩容到默认大小
-        if (elementData == DEFAULTCAPACITY_EMPTY_ELEMENTDATA) {
-            return Math.max(DEFAULT_CAPACITY, minCapacity);
-        }
-  			//否则就是数组的长度+1
-        return minCapacity;
+  //这里如果是无参构造器创建的数组 那么在第一次插入数据的时候 就可以把数据扩容到默认大小
+  if (elementData == DEFAULTCAPACITY_EMPTY_ELEMENTDATA) {
+    return Math.max(DEFAULT_CAPACITY, minCapacity);
+  }
+  //否则就是数组的长度+1
+  return minCapacity;
 }
 
 //检查容量是否足够 不够的话进行扩容
 private void ensureExplicitCapacity(int minCapacity) {
   //这个modCount要注意下
-        modCount++;
+  modCount++;
 				
-  			//当前数据量大于数组的容量了 进行扩容
-        // overflow-conscious code
-        if (minCapacity - elementData.length > 0)
-            grow(minCapacity);
+  //当前数据量大于数组的容量了 进行扩容
+  // overflow-conscious code
+  if (minCapacity - elementData.length > 0)
+    grow(minCapacity);
 }
 
 //扩容
 private void grow(int minCapacity) {
-        // overflow-conscious code
-        int oldCapacity = elementData.length;
-  			//新容量 = 旧容量 + （旧的容量/2）新的容量就是旧的容量的1.5倍
-        int newCapacity = oldCapacity + (oldCapacity >> 1);
-  			//新容量小于需要的容量 需要的容量覆盖新容量
-        if (newCapacity - minCapacity < 0)
-            newCapacity = minCapacity;
-  			//新的容量比最大容量大 使用最大容量
-        if (newCapacity - MAX_ARRAY_SIZE > 0)
-            newCapacity = hugeCapacity(minCapacity);
-  			//进行数组拷贝 把旧的数据拷贝到新的数组上
-        // minCapacity is usually close to size, so this is a win:
-        elementData = Arrays.copyOf(elementData, newCapacity);
+  // overflow-conscious code
+  int oldCapacity = elementData.length;
+  //新容量 = 旧容量 + （旧的容量/2）新的容量就是旧的容量的1.5倍
+  int newCapacity = oldCapacity + (oldCapacity >> 1);
+  //新容量小于需要的容量 需要的容量覆盖新容量
+  if (newCapacity - minCapacity < 0)
+    newCapacity = minCapacity;
+  //新的容量比最大容量大 使用最大容量
+  if (newCapacity - MAX_ARRAY_SIZE > 0)
+    newCapacity = hugeCapacity(minCapacity);
+  //进行数组拷贝 把旧的数据拷贝到新的数组上
+  // minCapacity is usually close to size, so this is a win:
+  elementData = Arrays.copyOf(elementData, newCapacity);
 }
 ```
 
@@ -118,8 +96,8 @@ private void grow(int minCapacity) {
 
 ```java
 final void checkForComodification() {
-            if (modCount != expectedModCount)
-                throw new ConcurrentModificationException();
+  if (modCount != expectedModCount)
+    throw new ConcurrentModificationException();
  }
 ```
 
@@ -129,22 +107,24 @@ final void checkForComodification() {
 
 ```java
 public E remove(int index) {
-        //index合法性检查 不能大于size
-        rangeCheck(index);
+  //index合法性检查 不能大于size
+  rangeCheck(index);
 
-        modCount++;
-        E oldValue = elementData(index);
+  modCount++;
+  E oldValue = elementData(index);
 
-        int numMoved = size - index - 1;
-        if (numMoved > 0)
-        //数组拷贝 将该元素后面的部分和前面的部分拼接起来 最后面多了一个空的元素
-        System.arraycopy(elementData, index+1, elementData, index,
-        numMoved);
-        elementData[--size] = null; // clear to let GC do its work
+  int numMoved = size - index - 1;
+  if (numMoved > 0)
+    //数组拷贝 将该元素后面的部分和前面的部分拼接起来 最后面多了一个空的元素
+    System.arraycopy(elementData, index+1, elementData, index,
+                     numMoved);
+  elementData[--size] = null; // clear to let GC do its work
 
-        return oldValue;
-        }
+  return oldValue;
+}
 
 
 ```
+
+看了以上实现，所以应该明白为什么ArrayList随机访问速度比较快了吧，那个Index就像字典的目录一样，可以很快的根据index找到数据。但是插入和删除操作性能比较低，因为会涉及到数组拷贝。所以结合场景选择合适的框架才是最重要的。
 
