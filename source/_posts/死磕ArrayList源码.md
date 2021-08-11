@@ -77,9 +77,11 @@ private void ensureCapacityInternal(int minCapacity) {
 
 //计算容量
 private static int calculateCapacity(Object[] elementData, int minCapacity) {
+  			//这里如果是无参构造器创建的数组 那么在第一次插入数据的时候 就可以把数据扩容到默认大小
         if (elementData == DEFAULTCAPACITY_EMPTY_ELEMENTDATA) {
             return Math.max(DEFAULT_CAPACITY, minCapacity);
         }
+  			//否则就是数组的长度+1
         return minCapacity;
 }
 
