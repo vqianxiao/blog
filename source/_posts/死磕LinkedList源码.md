@@ -31,15 +31,15 @@ transient Node<E> last;
 ```java
 //item 表示元素 next表示后面的节点 prev表示前面的节点
 private static class Node<E> {
-    E item;
-    Node<E> next;
-    Node<E> prev;
+  E item;
+  Node<E> next;
+  Node<E> prev;
 
-    Node(Node<E> prev, E element, Node<E> next) {
-        this.item = element;
-        this.next = next;
-        this.prev = prev;
-    }
+  Node(Node<E> prev, E element, Node<E> next) {
+    this.item = element;
+    this.next = next;
+    this.prev = prev;
+  }
 }
 ```
 
@@ -47,41 +47,41 @@ private static class Node<E> {
 
 ```java
 public void addFirst(E e) {
-        linkFirst(e);
-        }
+  linkFirst(e);
+}
 private void linkFirst(E e) {
-//先拿到当前的第一个节点
-final Node<E> f = first;
-//创建一个新的结点
-final Node<E> newNode = new Node<>(null, e, f);
-        //将新的节点放到第一个节点的位置上
-        first = newNode;
-        if (f == null)
-        //如果头节点为空 把新的节点赋值给最后一个节点 此时头节点 尾节点都为同一个节点
-        last = newNode;
-        else
-        //头节点有值 那么把新的节点赋值给原来头节点的前驱节点
-        f.prev = newNode;
-        size++;
-        modCount++;
-        }
+  //先拿到当前的第一个节点
+  final Node<E> f = first;
+  //创建一个新的结点
+  final Node<E> newNode = new Node<>(null, e, f);
+  //将新的节点放到第一个节点的位置上
+  first = newNode;
+  if (f == null)
+    //如果头节点为空 把新的节点赋值给最后一个节点 此时头节点 尾节点都为同一个节点
+    last = newNode;
+  else
+    //头节点有值 那么把新的节点赋值给原来头节点的前驱节点
+    f.prev = newNode;
+  size++;
+  modCount++;
+}
 
 public void addLast(E e) {
-        linkLast(e);
-        }
+  linkLast(e);
+}
 
 //与头插法类似
-        void linkLast(E e) {
-final Node<E> l = last;
-final Node<E> newNode = new Node<>(l, e, null);
-        last = newNode;
-        if (l == null)
-        first = newNode;
-        else
-        l.next = newNode;
-        size++;
-        modCount++;
-        }
+void linkLast(E e) {
+  final Node<E> l = last;
+  final Node<E> newNode = new Node<>(l, e, null);
+  last = newNode;
+  if (l == null)
+    first = newNode;
+  else
+    l.next = newNode;
+  size++;
+  modCount++;
+}
 ```
 
 假设链表此时为空，那么插入一个元素1，此时first节点就是1，该节点的前驱节点后继节点都为空，last节点也为1。然后再从头部插入一个元素2，元素2节点的后继节点为1的那个节点，然后头节点变成元素2的那个节点，元素1的前驱节点变成元素2的节点。
@@ -92,128 +92,128 @@ final Node<E> newNode = new Node<>(l, e, null);
 
 ```java
 public E removeFirst() {
-final Node<E> f = first;
-        if (f == null)
-        throw new NoSuchElementException();
-        return unlinkFirst(f);
-        }
+  final Node<E> f = first;
+  if (f == null)
+    throw new NoSuchElementException();
+  return unlinkFirst(f);
+}
 
 private E unlinkFirst(Node<E> f) {
-// assert f == first && f != null;
-final E element = f.item;
-//拿到当前节点的下一个节点
-final Node<E> next = f.next;
-        f.item = null;
-        f.next = null; // help GC
-        //将头节点指向下一个节点
-        first = next;
-        if (next == null)
-        //此时链表为空了所以last要清空
-        last = null;
-        else
-        next.prev = null;
-        size--;
-        modCount++;
-        return element;
-        }
+  // assert f == first && f != null;
+  final E element = f.item;
+  //拿到当前节点的下一个节点
+  final Node<E> next = f.next;
+  f.item = null;
+  f.next = null; // help GC
+  //将头节点指向下一个节点
+  first = next;
+  if (next == null)
+    //此时链表为空了所以last要清空
+    last = null;
+  else
+    next.prev = null;
+  size--;
+  modCount++;
+  return element;
+}
 
 public E removeLast() {
-final Node<E> l = last;
-        if (l == null)
-        throw new NoSuchElementException();
-        return unlinkLast(l);
-        }
+  final Node<E> l = last;
+  if (l == null)
+    throw new NoSuchElementException();
+  return unlinkLast(l);
+}
 
 private E unlinkLast(Node<E> l) {
-// assert l == last && l != null;
-final E element = l.item;
-final Node<E> prev = l.prev;
-        l.item = null;
-        l.prev = null; // help GC
-        last = prev;
-        if (prev == null)
-        first = null;
-        else
-        prev.next = null;
-        size--;
-        modCount++;
-        return element;
-        }
+  // assert l == last && l != null;
+  final E element = l.item;
+  final Node<E> prev = l.prev;
+  l.item = null;
+  l.prev = null; // help GC
+  last = prev;
+  if (prev == null)
+    first = null;
+  else
+    prev.next = null;
+  size--;
+  modCount++;
+  return element;
+}
 ```
 
 还有一种根据对象去删除元素，其实就是遍历去找这个元素，然后把这个元素的前驱节点和后继节点直接连接起来。
 
 ```java
 public boolean remove(Object o) {
-        if (o == null) {
-        for (Node<E> x = first; x != null; x = x.next) {
-        if (x.item == null) {
+  if (o == null) {
+    for (Node<E> x = first; x != null; x = x.next) {
+      if (x.item == null) {
         unlink(x);
         return true;
-        }
-        }
-        } else {
-        for (Node<E> x = first; x != null; x = x.next) {
-        if (o.equals(x.item)) {
+      }
+    }
+  } else {
+    for (Node<E> x = first; x != null; x = x.next) {
+      if (o.equals(x.item)) {
         unlink(x);
         return true;
-        }
-        }
-        }
-        return false;
-        }
+      }
+    }
+  }
+  return false;
+}
 
-        E unlink(Node<E> x) {
-// assert x != null;
-final E element = x.item;
-final Node<E> next = x.next;
-final Node<E> prev = x.prev;
+E unlink(Node<E> x) {
+  // assert x != null;
+  final E element = x.item;
+  final Node<E> next = x.next;
+  final Node<E> prev = x.prev;
 
-        //如果当前节点前驱节点为空 那么只要将头节点指向当前节点的后继节点即可
-        if (prev == null) {
-        first = next;
-        } else {
-        //将前驱节点的后继节点指向当前节点的后继节点
-        prev.next = next;
-        x.prev = null;
-        }
+  //如果当前节点前驱节点为空 那么只要将头节点指向当前节点的后继节点即可
+  if (prev == null) {
+    first = next;
+  } else {
+    //将前驱节点的后继节点指向当前节点的后继节点
+    prev.next = next;
+    x.prev = null;
+  }
 
-        //如果当前节点后继节点为空 那么只要将尾节点指向当前节点的前驱节点即可
-        if (next == null) {
-        last = prev;
-        } else {
-        //将后继节点的前驱节点指向当前节点的前驱节点
-        next.prev = prev;
-        x.next = null;
-        }
+  //如果当前节点后继节点为空 那么只要将尾节点指向当前节点的前驱节点即可
+  if (next == null) {
+    last = prev;
+  } else {
+    //将后继节点的前驱节点指向当前节点的前驱节点
+    next.prev = prev;
+    x.next = null;
+  }
 
-        x.item = null;
-        size--;
-        modCount++;
-        return element;
-        }
+  x.item = null;
+  size--;
+  modCount++;
+  return element;
+}
 ```
 
 看下根据index查找Node的方法
 
 ```java
 Node<E> node(int index) {
-        // assert isElementIndex(index);
+  // assert isElementIndex(index);
 
-        //当index<(size/2)的时候 那么从前往后找
-        if (index < (size >> 1)) {
-        Node<E> x = first;
-        for (int i = 0; i < index; i++)
-        x = x.next;
-        return x;
-        } else {
-        //当(index>=size/2)的时候 从后往前找
-        Node<E> x = last;
-        for (int i = size - 1; i > index; i--)
-        x = x.prev;
-        return x;
-        }
-        }
+  //当index<(size/2)的时候 那么从前往后找
+  if (index < (size >> 1)) {
+    Node<E> x = first;
+    for (int i = 0; i < index; i++)
+      x = x.next;
+    return x;
+  } else {
+  //当(index>=size/2)的时候 从后往前找
+    Node<E> x = last;
+    for (int i = size - 1; i > index; i--)
+      x = x.prev;
+    return x;
+  }
+}
 ```
 
 其实就是为了找到一个离index比较近的方向，然后从那个方向开始遍历。

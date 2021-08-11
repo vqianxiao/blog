@@ -107,21 +107,21 @@ final void checkForComodification() {
 
 ```java
 public E remove(int index) {
-  //index合法性检查 不能大于size
-  rangeCheck(index);
+        //index合法性检查 不能大于size
+        rangeCheck(index);
 
-  modCount++;
-  E oldValue = elementData(index);
+        modCount++;
+        E oldValue = elementData(index);
 
-  int numMoved = size - index - 1;
-  if (numMoved > 0)
-    //数组拷贝 将该元素后面的部分和前面的部分拼接起来 最后面多了一个空的元素
-    System.arraycopy(elementData, index+1, elementData, index,
-                     numMoved);
-  elementData[--size] = null; // clear to let GC do its work
+        int numMoved = size - index - 1;
+        if (numMoved > 0)
+        //数组拷贝 将该元素后面的部分和前面的部分拼接起来 最后面多了一个空的元素
+        System.arraycopy(elementData, index+1, elementData, index,
+        numMoved);
+        elementData[--size] = null; // clear to let GC do its work
 
-  return oldValue;
-}
+        return oldValue;
+        }
 
 
 ```
