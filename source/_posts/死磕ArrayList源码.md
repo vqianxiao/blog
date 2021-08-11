@@ -5,9 +5,13 @@ category:  源码解析
 description: 死磕ArrayList源码
 tags: JDK
 date: 2021/08/11 17:11:10
+
 ---
+
 ArrayList是List接口的可变数组的实现。实现了所有可选列表的操作。继承自AbstractList，实现了List接口、RandomAccess接口、Cloneable接口、Serializable接口。
 实现的这些接口中，RandomAccess接口和Cloneable接口还有Serializable接口都是表示ArrayList拥有随机访问、克隆、序列化的能力。
+
+AbstractList抽象类主要是提供支持随机访问实现的模版。
 
 Iterable是一个遍历接口，提供了获取迭代器的方法，集合可以根据自己的需要实现自己的迭代器
 
@@ -17,41 +21,41 @@ ArrayList的属性
 
 ```java
 		/**
-     * Default initial capacity.
-     */
-		//默认容量大小
-    private static final int DEFAULT_CAPACITY = 10;
+ * Default initial capacity.
+ */
+//默认容量大小
+private static final int DEFAULT_CAPACITY = 10;
 
-    /**
-     * Shared empty array instance used for empty instances.
-     */
-		//空集合的空实例
-    private static final Object[] EMPTY_ELEMENTDATA = {};
+/**
+ * Shared empty array instance used for empty instances.
+ */
+//空集合的空实例
+private static final Object[] EMPTY_ELEMENTDATA = {};
 
-    /**
-     * Shared empty array instance used for default sized empty instances. We
-     * distinguish this from EMPTY_ELEMENTDATA to know how much to inflate when
-     * first element is added.
-     */
-		//默认大小的空实例 和EMPTY_ELEMENTDATA 不同是为了知道添加第一个元素的时候需要膨胀多少
-    private static final Object[] DEFAULTCAPACITY_EMPTY_ELEMENTDATA = {};
+/**
+ * Shared empty array instance used for default sized empty instances. We
+ * distinguish this from EMPTY_ELEMENTDATA to know how much to inflate when
+ * first element is added.
+ */
+//默认大小的空实例 和EMPTY_ELEMENTDATA 不同是为了知道添加第一个元素的时候需要膨胀多少
+private static final Object[] DEFAULTCAPACITY_EMPTY_ELEMENTDATA = {};
 
-    /**
-     * The array buffer into which the elements of the ArrayList are stored.
-     * The capacity of the ArrayList is the length of this array buffer. Any
-     * empty ArrayList with elementData == DEFAULTCAPACITY_EMPTY_ELEMENTDATA
-     * will be expanded to DEFAULT_CAPACITY when the first element is added.
-     */
-		//就是集合中的数组元素
-    transient Object[] elementData; // non-private to simplify nested class access
+/**
+ * The array buffer into which the elements of the ArrayList are stored.
+ * The capacity of the ArrayList is the length of this array buffer. Any
+ * empty ArrayList with elementData == DEFAULTCAPACITY_EMPTY_ELEMENTDATA
+ * will be expanded to DEFAULT_CAPACITY when the first element is added.
+ */
+//就是集合中的数组元素
+transient Object[] elementData; // non-private to simplify nested class access
 
-    /**
-     * The size of the ArrayList (the number of elements it contains).
-     *
-     * @serial
-     */
-		//集合中元素的个数
-    private int size;
+/**
+ * The size of the ArrayList (the number of elements it contains).
+ *
+ * @serial
+ */
+//集合中元素的个数
+private int size;
 ```
 
 相关注释写在代码上了。然后来看add()方法。
@@ -123,7 +127,7 @@ final void checkForComodification() {
 
 ```java
 public E remove(int index) {
-  			//index合法性检查 不能大于size
+        //index合法性检查 不能大于size
         rangeCheck(index);
 
         modCount++;
@@ -131,13 +135,13 @@ public E remove(int index) {
 
         int numMoved = size - index - 1;
         if (numMoved > 0)
-          //数组拷贝 将该元素后面的部分和前面的部分拼接起来 最后面多了一个空的元素
-            System.arraycopy(elementData, index+1, elementData, index,
-                             numMoved);
+        //数组拷贝 将该元素后面的部分和前面的部分拼接起来 最后面多了一个空的元素
+        System.arraycopy(elementData, index+1, elementData, index,
+        numMoved);
         elementData[--size] = null; // clear to let GC do its work
 
         return oldValue;
-    }
+        }
 
 
 ```
