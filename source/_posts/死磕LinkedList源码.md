@@ -216,36 +216,36 @@ Node<E> node(int index) {
 }
 ```
 
-其实就是为了找到一个离index比较近的方向，然后从那个方向开始遍历。
+其实就是为了找到一个离index比较近的方向，然后从那个方向开始遍历。这里需要注意一下，虽然LinkedList不是数组，但是index还是从0开始的。
 
 然后看下往指定位置插入元素的方法
 
 ```java
 public void add(int index, E element) {
-        checkPositionIndex(index);
-        //当index等于size时 直接往最后插入 其实这里有点奇怪 为什么不把往头部插入也一起判断出来呢
-        if (index == size)
-        linkLast(element);
-        else
-        linkBefore(element, node(index));
-        }
+  checkPositionIndex(index);
+  //当index等于size时 直接往最后插入 其实这里有点奇怪 为什么不把往头部插入也一起判断出来呢
+  if (index == size)
+    linkLast(element);
+  else
+    linkBefore(element, node(index));
+}
 
 //其实这个思路就是新创建一个节点 然后将当前节点的前驱节点指向新创建的节点
-        void linkBefore(E e, Node<E> succ) {
-// assert succ != null;
-//拿到当前节点的前驱节点
-final Node<E> pred = succ.prev;
-//创建新的节点
-final Node<E> newNode = new Node<>(pred, e, succ);
-        //当前节点的前驱指向新创建的节点
-        succ.prev = newNode;
-        if (pred == null)
-        first = newNode;
-        else
-        pred.next = newNode;
-        size++;
-        modCount++;
-        }
+void linkBefore(E e, Node<E> succ) {
+  // assert succ != null;
+  //拿到当前节点的前驱节点
+  final Node<E> pred = succ.prev;
+  //创建新的节点
+  final Node<E> newNode = new Node<>(pred, e, succ);
+  //当前节点的前驱指向新创建的节点
+  succ.prev = newNode;
+  if (pred == null)
+    first = newNode;
+  else
+    pred.next = newNode;
+  size++;
+  modCount++;
+}
 ```
 
 所以以上这些设计，导致了LinkedList的插入删除操作成本较低，因为没有扩容，但是随机访问效率不如ArrayList。所以可以根据实际场景选择合适的集合。
