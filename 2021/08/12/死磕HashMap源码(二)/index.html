@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.4.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/blog/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/blog/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/blog/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/blog/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/blog/css/main.css">
+
+
+<link rel="stylesheet" href="/blog/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"vqianxiao.github.io","root":"/blog/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+  </script>
+
+  <meta name="description" content="死磕HashMap源码(二) 红黑树相关的操作">
+<meta property="og:type" content="article">
+<meta property="og:title" content="死磕HashMap源码(二)">
+<meta property="og:url" content="https://vqianxiao.github.io/blog/2021/08/12/%E6%AD%BB%E7%A3%95HashMap%E6%BA%90%E7%A0%81(%E4%BA%8C)/index.html">
+<meta property="og:site_name" content="言风的博客">
+<meta property="og:description" content="死磕HashMap源码(二) 红黑树相关的操作">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="https://vqianxiao.github.io/blog/images/hashmap/bst.png">
+<meta property="og:image" content="https://vqianxiao.github.io/blog/images/hashmap/bstdel.png">
+<meta property="og:image" content="https://vqianxiao.github.io/blog/images/hashmap/rotateRBTree.png">
+<meta property="og:image" content="https://vqianxiao.github.io/blog/images/hashmap/insertcase1.png">
+<meta property="og:image" content="https://vqianxiao.github.io/blog/images/hashmap/insertcase2.png">
+<meta property="og:image" content="https://vqianxiao.github.io/blog/images/hashmap/insertcase3.png">
+<meta property="og:image" content="https://vqianxiao.github.io/blog/images/hashmap/delcase1.png">
+<meta property="og:image" content="https://vqianxiao.github.io/blog/images/hashmap/delcase2.png">
+<meta property="og:image" content="https://vqianxiao.github.io/blog/images/hashmap/delcase3.png">
+<meta property="og:image" content="https://vqianxiao.github.io/blog/images/hashmap/delcase4.png">
+<meta property="article:published_time" content="2021-08-12T11:42:10.000Z">
+<meta property="article:modified_time" content="2021-08-12T11:42:10.000Z">
+<meta property="article:author" content="言风">
+<meta property="article:tag" content="JDK">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://vqianxiao.github.io/blog/images/hashmap/bst.png">
+
+<link rel="canonical" href="https://vqianxiao.github.io/blog/2021/08/12/%E6%AD%BB%E7%A3%95HashMap%E6%BA%90%E7%A0%81(%E4%BA%8C)/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'en'
+  };
+</script>
+
+  <title>死磕HashMap源码(二) | 言风的博客</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/blog/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">言风的博客</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+      <p class="site-subtitle" itemprop="description">世界上并没有完美的程序，但我们并不因此而沮丧，因为写程序本来就是一个不断追求完美的过程。</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/blog/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/blog/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>Archives</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
+    <link itemprop="mainEntityOfPage" href="https://vqianxiao.github.io/blog/2021/08/12/%E6%AD%BB%E7%A3%95HashMap%E6%BA%90%E7%A0%81(%E4%BA%8C)/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/blog/images/avatar.gif">
+      <meta itemprop="name" content="言风">
+      <meta itemprop="description" content="让自己更值钱，你值得更好的自己">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="言风的博客">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          死磕HashMap源码(二)
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2021-08-12 19:42:10" itemprop="dateCreated datePublished" datetime="2021-08-12T19:42:10+08:00">2021-08-12</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/blog/categories/%E6%BA%90%E7%A0%81%E8%A7%A3%E6%9E%90/" itemprop="url" rel="index"><span itemprop="name">源码解析</span></a>
+                </span>
+            </span>
+
+          
+            <div class="post-description">死磕HashMap源码(二) 红黑树相关的操作</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p>Jdk8以前，使用的是链表去解决hash冲突的，这样就会导致一个问题，如果这个链表很长，那么从链表中定位到数据的时间复杂度就是O(n)，链表越长性能越差。因此Jdk8对HashMap进行了优化，引入了自平衡的红黑树结构，让定位元素的时间复杂度优化成O(logn)，这样就可以提升元素的查找效率，但是也不是完全摒弃了链表，因为元素不多的情况下，链表的插入速度更快。</p>
+<p>看下树化的源码</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">final</span> <span class="keyword">void</span> <span class="title">treeifyBin</span><span class="params">(Node&lt;K,V&gt;[] tab, <span class="keyword">int</span> hash)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">int</span> n, index; Node&lt;K,V&gt; e;</span><br><span class="line">    <span class="comment">//这里还要进行判断 如果桶容量小于64还是会进行扩容</span></span><br><span class="line">    <span class="keyword">if</span> (tab == <span class="keyword">null</span> || (n = tab.length) &lt; MIN_TREEIFY_CAPACITY)</span><br><span class="line">        resize();</span><br><span class="line">    <span class="keyword">else</span> <span class="keyword">if</span> ((e = tab[index = (n - <span class="number">1</span>) &amp; hash]) != <span class="keyword">null</span>) &#123;</span><br><span class="line">        TreeNode&lt;K,V&gt; hd = <span class="keyword">null</span>, tl = <span class="keyword">null</span>;</span><br><span class="line">        <span class="keyword">do</span> &#123;</span><br><span class="line">            <span class="comment">//这里只是将原来的Node替换成了TreeNode</span></span><br><span class="line">            TreeNode&lt;K,V&gt; p = replacementTreeNode(e, <span class="keyword">null</span>);</span><br><span class="line">            <span class="keyword">if</span> (tl == <span class="keyword">null</span>)</span><br><span class="line">                hd = p;</span><br><span class="line">            <span class="keyword">else</span> &#123;</span><br><span class="line">                p.prev = tl;</span><br><span class="line">                tl.next = p;</span><br><span class="line">            &#125;</span><br><span class="line">            tl = p;</span><br><span class="line">        &#125; <span class="keyword">while</span> ((e = e.next) != <span class="keyword">null</span>);</span><br><span class="line">        <span class="keyword">if</span> ((tab[index] = hd) != <span class="keyword">null</span>)</span><br><span class="line">            <span class="comment">//这里进行红黑树的转化</span></span><br><span class="line">            hd.treeify(tab);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function">TreeNode&lt;K,V&gt; <span class="title">replacementTreeNode</span><span class="params">(Node&lt;K,V&gt; p, Node&lt;K,V&gt; next)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">return</span> <span class="keyword">new</span> TreeNode&lt;&gt;(p.hash, p.key, p.value, next);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>通过上面的代码可以看到，链表转红黑树其实是有两个条件的，一个是链表长度大于8，还有一个就是桶容量要大于64，否则，就只会扩容不会树化。</p>
+<p>然后treeifyBin方法中将Node节点转化为TreeNode，此时只是节点类型转化，并没有实际的树化，并且记录了链表的顺序。</p>
+<p>然后来看下TreeNode的结构，方法我没粘，需要的时候再看。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">static</span> <span class="keyword">final</span> <span class="class"><span class="keyword">class</span> <span class="title">TreeNode</span>&lt;<span class="title">K</span>,<span class="title">V</span>&gt; <span class="keyword">extends</span> <span class="title">LinkedHashMap</span>.<span class="title">Entry</span>&lt;<span class="title">K</span>,<span class="title">V</span>&gt; </span>&#123;</span><br><span class="line">    TreeNode&lt;K,V&gt; parent;  <span class="comment">// red-black tree links</span></span><br><span class="line">    TreeNode&lt;K,V&gt; left;</span><br><span class="line">    TreeNode&lt;K,V&gt; right;</span><br><span class="line">    TreeNode&lt;K,V&gt; prev;    <span class="comment">// needed to unlink next upon deletion</span></span><br><span class="line">    <span class="keyword">boolean</span> red;</span><br><span class="line">    TreeNode(<span class="keyword">int</span> hash, K key, V val, Node&lt;K,V&gt; next) &#123;</span><br><span class="line">        <span class="keyword">super</span>(hash, key, val, next);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>上面看了链表树化的操作，然后来看下树转链表的操作。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">final</span> Node&lt;K,V&gt; <span class="title">untreeify</span><span class="params">(HashMap&lt;K,V&gt; map)</span> </span>&#123;</span><br><span class="line">    Node&lt;K,V&gt; hd = <span class="keyword">null</span>, tl = <span class="keyword">null</span>;</span><br><span class="line">    <span class="comment">//这里遍历树节点 然后转化成Node节点 hd是头 tl是尾 根据树节点保存的顺序恢复链表的顺序</span></span><br><span class="line">    <span class="keyword">for</span> (Node&lt;K,V&gt; q = <span class="keyword">this</span>; q != <span class="keyword">null</span>; q = q.next) &#123;</span><br><span class="line">        Node&lt;K,V&gt; p = map.replacementNode(q, <span class="keyword">null</span>);</span><br><span class="line">        <span class="keyword">if</span> (tl == <span class="keyword">null</span>)</span><br><span class="line">            hd = p;</span><br><span class="line">        <span class="keyword">else</span></span><br><span class="line">            tl.next = p;</span><br><span class="line">        tl = p;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> hd;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function">Node&lt;K,V&gt; <span class="title">replacementNode</span><span class="params">(Node&lt;K,V&gt; p, Node&lt;K,V&gt; next)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">return</span> <span class="keyword">new</span> Node&lt;&gt;(p.hash, p.key, p.value, next);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>我们已经知道了链表转树的条件，那么树是什么时候转成链表呢？其实可以猜个大概，因为扩容和删除节点的都会让树节点变少。</p>
+<p>1.扩容的时候。如果扩容那部分仔细看的话，就知道扩容的时候，其实就是把桶里的元素的index进行重新分配，让它们更分散，也包括树。这个时候就需要把树像链表一样拆开，然后去看这些元素哪些该喊0哪些该喊1，进而给它们重新分配桶，这样一个大树可能就变成了一颗小树，如果小于等于非树化阈值，那么就转成链表。</p>
+<p>2.删除节点的时候。</p>
+<p>为了深入理解红黑树，需要先从二叉查找树说起。</p>
+<h4 id="BST"><a href="#BST" class="headerlink" title="BST"></a>BST</h4><p>二叉查找树（Binary Search Tree 简称BST）是一颗二叉树，它的左子节点的值比父节点的值要小，右节点的值要比父节点的值大。它的高度决定了它的查找效率。在理想的情况下，二叉查找树增删改查的时间复杂度为O(logN)（其中N为节点数），最坏的情况下为O(N)。当它的高度为logN+1时，我们就说二叉查找树是平衡的。</p>
+<p><img src="/blog/images/hashmap/bst.png"></p>
+<p>BST的查找</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line">T  key = a search key</span><br><span class="line">Node root = point to the root of a BST</span><br><span class="line"></span><br><span class="line"> <span class="comment">//其实思路就是找到根 然后去判断 相等返回。小于就从左子树查找，大于就从右子树查找 直到当前节点指针为空或者找到对应的节点</span></span><br><span class="line"><span class="keyword">while</span>(<span class="keyword">true</span>)&#123;</span><br><span class="line">    <span class="keyword">if</span>(root==<span class="keyword">null</span>)&#123;</span><br><span class="line">    	<span class="keyword">break</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">if</span>(root.value.equals(key))&#123;</span><br><span class="line">    	<span class="keyword">return</span> root;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">else</span> <span class="keyword">if</span>(key.compareTo(root.value)&lt;<span class="number">0</span>)&#123;</span><br><span class="line">    	root = root.left;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">else</span>&#123;</span><br><span class="line">    	root = root.right;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"><span class="keyword">return</span> <span class="keyword">null</span>;</span><br></pre></td></tr></table></figure>
+
+<p>BST的插入</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line">Node node = create a <span class="keyword">new</span> node with specify value</span><br><span class="line">Node root = point the root node of a BST</span><br><span class="line">Node parent = <span class="keyword">null</span>;</span><br><span class="line"></span><br><span class="line"><span class="comment">//find the parent node to append the new node</span></span><br><span class="line"><span class="keyword">while</span>(<span class="keyword">true</span>)&#123;</span><br><span class="line">   <span class="keyword">if</span>(root==<span class="keyword">null</span>)<span class="keyword">break</span>;</span><br><span class="line">   parent = root;</span><br><span class="line">   <span class="keyword">if</span>(node.value.compareTo(root.value)&lt;=<span class="number">0</span>)&#123;</span><br><span class="line">      root = root.left;  </span><br><span class="line">   &#125;<span class="keyword">else</span>&#123;</span><br><span class="line">      root = root.right;</span><br><span class="line">   &#125; </span><br><span class="line">&#125;</span><br><span class="line"><span class="keyword">if</span>(parent!=<span class="keyword">null</span>)&#123;</span><br><span class="line">   <span class="keyword">if</span>(node.value.compareTo(parent.value)&lt;=<span class="number">0</span>)&#123;<span class="comment">//append to left</span></span><br><span class="line">      parent.left = node;</span><br><span class="line">   &#125;<span class="keyword">else</span>&#123;<span class="comment">//append to right</span></span><br><span class="line">	  parent.right = node;</span><br><span class="line">   &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<p>插入操作先通过循环找到要插入的节点的父节点，然后对比父节点，小的就插入到父节点的左节点，大的就插入到父节点的右节点。</p>
+<p>BST的删除</p>
+<p>删除步骤如下：</p>
+<p>1.查找要删除的节点</p>
+<p>2.如果待删除的节点是叶子节点，则直接删除</p>
+<p>3.如果删除的节点不是叶子节点，则先找到待删除节点的中序遍历的后继节点，用该后继节点的值替换待删除的节点的值，然后删除后继节点。</p>
+<p><img src="/blog/images/hashmap/bstdel.png"></p>
+<p>BST的缺陷</p>
+<p>BST的主要问题，数据在插入的时候，会导致树倾斜，不同的插入顺序会导致树的高度不一样，而树的高度直接影响了树的查找效率。理想的高度是logN，最坏的情况就是所有的节点都在一条斜线上，这样的树的高度为N。</p>
+<h4 id="RBTREE"><a href="#RBTREE" class="headerlink" title="RBTREE"></a>RBTREE</h4><p>基于BST的问题，一种新的树——平衡二叉查找树产生了。平衡树在插入和删除的时候，会通过旋转操作将高度保持在logN。其中两款具有代表性的平衡树分别为AVL树和红黑树。AVL树由于实现比较复杂，而且插入和删除性能差，在实际环境下的应用不如红黑树。红黑树应用非常广泛，在Linux内核中的完全公平调度器、高精度计时器、ext3文件系统等等，各种语言的函数库如Java的TreeMap和TreeSet，C++ STL的map、multimap、multiset等。值得一提的是，Java8中HashMap的实现也因为用RBTree取代链表，性能有所提升。</p>
+<blockquote>
+<p>1.任何一个节点都有颜色，节点是红色或者黑色</p>
+<p>2.根节点是黑色的</p>
+<p>3.父子节点之间不能出现两个连续的红节点（红色节点的子节点只能是黑色节点）</p>
+<p>4.从任意节点到叶子节点的所有路径都包含相同数目的黑色节点</p>
+<p>5.所有叶子节点都是黑色节点（叶子是NIL结点，默认省略）</p>
+</blockquote>
+<p>RBTree理论上还是一颗BST树，但是在对BST的插入和删除操作时为维持树的平衡，即保证树的高度在[logN,logN+1]（理论上，极端情况下可以持续爱你RBTree的高度达到2*logN，但实际上很难遇到）。这样RBTree的查找时间复杂度始终保持在O(logN)从而接近于理想的BST。RBTree的删除和插入操作的时间复杂度也是O(logN)，RBTree的查找操作和BST的查找操作一致。</p>
+<p>RBTree的旋转操作</p>
+<p>旋转操作（Rotate）的目的是使节点颜色符合定义，让RBTree的高度达到平衡。Rotate分为left-rotate（左旋）和right-rotate（右旋），区分左旋和右旋的方法是：待旋转的节点从左边上升到父节点就是右旋，待旋转的节点从右边上升到父节点就是左旋。</p>
+<p><img src="/blog/images/hashmap/rotateRBTree.png"></p>
+<p>RBTree的查找操作</p>
+<p>RBTree的查找操作和BST的查找操作是一样的。</p>
+<h4 id="RBTree的插入操作"><a href="#RBTree的插入操作" class="headerlink" title="RBTree的插入操作"></a>RBTree的插入操作</h4><p>RBTree的插入操作和BST的插入方式一致，不过在插入后，可能会导致树的不平衡，这时就需要对树进行旋转操作和颜色修复（也叫变色），使得它符合RBTree的定义。</p>
+<p>新插入的节点是红色的，插入修复操作如果遇到父节点的颜色为黑则修复操作结束。也就是说，只有在父节点为红色结点的时候需要插入修复操作。</p>
+<p>插入修复操作分为以下三种情况，而且新插入的结点的父节点都是红色的：</p>
+<p>1.叔叔结点也为红色</p>
+<p>2.叔叔结点为空，且祖父结点、父节点和新节点处于一条斜线上</p>
+<p>3.叔叔结点为空，且祖父结点、父节点和新节点不出与一条斜线上</p>
+<h5 id="插入操作-case1-第一种情况（叔叔节点也为红色）"><a href="#插入操作-case1-第一种情况（叔叔节点也为红色）" class="headerlink" title="插入操作-case1 第一种情况（叔叔节点也为红色）"></a>插入操作-case1 第一种情况（叔叔节点也为红色）</h5><p>将父节点和叔叔节点与祖父节点的颜色互换，这样就符合了RBTree的定义。即维持了高度的平衡，修复后颜色也符合RBTree定义的第三条和第四条。下图中，操作完成后A节点变成了新的节点。如果A节点的父节点不是黑色的话，则继续做修复操作。</p>
+<p><img src="/blog/images/hashmap/insertcase1.png"></p>
+<h5 id="插入操作-case2-第二种情况（叔叔节点为空，且祖父节点、父节点和新节点处于一条斜线上）"><a href="#插入操作-case2-第二种情况（叔叔节点为空，且祖父节点、父节点和新节点处于一条斜线上）" class="headerlink" title="插入操作-case2 第二种情况（叔叔节点为空，且祖父节点、父节点和新节点处于一条斜线上）"></a>插入操作-case2 第二种情况（叔叔节点为空，且祖父节点、父节点和新节点处于一条斜线上）</h5><p>将B节点进行右旋操作，并且和父节点A互换颜色，通过该修复操作BRTree的高度和颜色都符合红黑树的定义。如果B和C节点都是右节点的话，只要将操作变成左旋就可以了。</p>
+<p><img src="/blog/images/hashmap/insertcase2.png"></p>
+<h5 id="插入操作-case3-第三种情况（叔叔结点为空，且祖父结点、父节点和新节点不出与一条斜线上）"><a href="#插入操作-case3-第三种情况（叔叔结点为空，且祖父结点、父节点和新节点不出与一条斜线上）" class="headerlink" title="插入操作-case3 第三种情况（叔叔结点为空，且祖父结点、父节点和新节点不出与一条斜线上）"></a>插入操作-case3 第三种情况（叔叔结点为空，且祖父结点、父节点和新节点不出与一条斜线上）</h5><p>将C节点进行左旋，这样就将第三种情况转换成第二种情况了，然后针对第二种情况进行操作处理就可以了。case2操作做了一个右旋操作和颜色互换来达到目的。如果树的结构是下图的镜像结，则只需要将对应的左旋变成右旋，右旋变成左旋即可。</p>
+<p><img src="/blog/images/hashmap/insertcase3.png"></p>
+<p><strong>插入操作的总结</strong></p>
+<p>插入后的修复操作时一个向root节点回溯的操作，一旦涉及的节点都符合了红黑树的定义，修复操作结束。之所以会向上回溯是由于case1操作会将父节点、叔叔节点和祖父节点进行变色，有可能会导致祖父节点不平衡（红黑树定义三）。这个时候需要对祖父节点为起点进行调节（向上回溯）。</p>
+<p>祖父节点调节后如果还是遇到它的祖父颜色问题，操作就会继续向上回溯，直到root节点为止，根据定义root节点永远是黑色的。在向上的回溯过程中，针对插入的3种情况进行调节，直到符合红黑树的定义为止。直到涉及的节点都符合了红黑树的定义，修复操作结束。</p>
+<p>如果上面的3种情况对应的操作是在右子树上，对对应的镜像操作就可以了。</p>
+<h4 id="RBTree的删除操作"><a href="#RBTree的删除操作" class="headerlink" title="RBTree的删除操作"></a>RBTree的删除操作</h4><p>删除操作首先要做的也是BST的删除操作，删除操作会删除对应的节点，如果是叶子结点就直接删除，如果是非叶子结点，会用对应的中序遍历的后继节点来顶替要删除节点的位置。删除后就需要做删除修复操作，使树符合红黑树的定义，符合定义的红黑树高度是平衡的。</p>
+<p>删除修复操作在遇到被删除的节点是红色节点或者到达root节点时，修复操作完毕。</p>
+<p>删除修复操作时针对删除黑色节点才有的，当黑色节点被删除后会让整个树不符合RBTree的定义的第四条。需要做的处理时从兄弟节点上借调黑色的节点过来，如果兄弟节点没有黑色节点可以借调的话，就只能向上追溯，将每一级的黑色节点数减去一个，使得整棵树符合红黑树的定义。</p>
+<p>删除操作总体思想时从兄弟节点借调黑色节点使树保持局部的平衡，如果局部的平衡达到了，就看整体的树是否是平衡的，如果不平衡就接着向上追溯调整。</p>
+<p>删除修复操作分为四种情况，并且只针对黑色节点的删除：</p>
+<p>1.待删除的节点的兄弟节点是红色的节点</p>
+<p>2.待删除的节点的兄弟节点是黑色的节点，且兄弟节点的子节点都是黑色的</p>
+<p>3.待调整的节点的兄弟节点是黑色的节点，且兄弟节点的左子节点是红色的，右节点是黑色的（兄弟节点在右边），如果兄弟节点在左边的话，就是兄弟节点的右子节点是红色的，左节点是黑色的</p>
+<p>4.待调整的节点的兄弟节点是黑色的节点，且右子节点是红色的（兄弟节点在右边），如果兄弟节点在左边，则对应的就是左节点是红色的</p>
+<h5 id="删除操作-case1（待删除的节点的兄弟节点是红色的节点）"><a href="#删除操作-case1（待删除的节点的兄弟节点是红色的节点）" class="headerlink" title="删除操作-case1（待删除的节点的兄弟节点是红色的节点）"></a>删除操作-case1（待删除的节点的兄弟节点是红色的节点）</h5><p>由于兄弟节点是红色结点的时候，无法借调黑色节点，所以需要将兄弟节点提升到父节点，由于兄弟节点是红色的，根据RBTree的定义，兄弟节点的子节点是黑色的，就可以从它的子节点借调了。</p>
+<p>case1这样转换以后就会变成后面的case2，case3，或者case4进行处理了。上升操作需要对C做一个左旋操作，如果是镜像结构的树只需要做对应的右旋操作即可。</p>
+<p>之所以要做case1操作是因为兄弟节点是红色的，无法借到一个黑色节点来填补删除的黑色节点。</p>
+<p><img src="/blog/images/hashmap/delcase1.png"></p>
+<h5 id="删除操作-case2-（待删除的节点的兄弟节点是黑色的节点，且兄弟节点的子节点都是黑色的）"><a href="#删除操作-case2-（待删除的节点的兄弟节点是黑色的节点，且兄弟节点的子节点都是黑色的）" class="headerlink" title="删除操作-case2 （待删除的节点的兄弟节点是黑色的节点，且兄弟节点的子节点都是黑色的）"></a>删除操作-case2 （待删除的节点的兄弟节点是黑色的节点，且兄弟节点的子节点都是黑色的）</h5><p>case2的删除操作是由于兄弟节点可以消除一个黑色节点，因为兄弟节点和兄弟节点之间的子节点都是黑色的，所以可以将兄弟节点变红，这样就可以保证树的局部的颜色符合定义了。这个时候需要将父节点A变成新的节点，继续向上调整，直到整棵树的颜色符合RBTree的定义为止。</p>
+<p>case2这种情况下之所以要将兄弟节点变红，是因为如果把兄弟节点借调过来，会导致兄弟的结构不符合RBTree的定义，这样的情况下只能是将兄弟节点也变成红色来达到颜色的平衡。当将兄弟节点也变红之后，达到了局部的平衡了，但是对于祖父节点来说是不符合定义4的（因为了个黑色的节点）。这样就需要回溯到父节点，接着进行修复操作。</p>
+<p><img src="/blog/images/hashmap/delcase2.png"></p>
+<h5 id="删除操作-case3（待调整的节点的兄弟节点是黑色的节点，且兄弟节点的左子节点是红色的，右节点是黑色的（兄弟节点在右边），如果兄弟节点在左边的话，就是兄弟节点的右子节点是红色的，左节点是黑色的）"><a href="#删除操作-case3（待调整的节点的兄弟节点是黑色的节点，且兄弟节点的左子节点是红色的，右节点是黑色的（兄弟节点在右边），如果兄弟节点在左边的话，就是兄弟节点的右子节点是红色的，左节点是黑色的）" class="headerlink" title="删除操作-case3（待调整的节点的兄弟节点是黑色的节点，且兄弟节点的左子节点是红色的，右节点是黑色的（兄弟节点在右边），如果兄弟节点在左边的话，就是兄弟节点的右子节点是红色的，左节点是黑色的）"></a>删除操作-case3（待调整的节点的兄弟节点是黑色的节点，且兄弟节点的左子节点是红色的，右节点是黑色的（兄弟节点在右边），如果兄弟节点在左边的话，就是兄弟节点的右子节点是红色的，左节点是黑色的）</h5><p>case3的删除操作是一个中间步骤，它的目的是将左边的红色节点借调过来，这样就可以转换成case4状态了，在case4状态下可以将D、E节点都借调过来，通过将两个节点变成黑色来保证红黑树的整体平衡。</p>
+<p>之所以说case3是一个中间状态，是因为根据红黑树的定义来说，下图并不是平衡的，它是通过case2操作完后向上回溯出现的状态。之所以会出现case3和后面的case4的情况，是因为可以通过借调侄子节点的红色，变成黑色来符合定义4。</p>
+<p><img src="/blog/images/hashmap/delcase3.png"></p>
+<h5 id="删除操作-case4-（待调整的节点的兄弟节点是黑色的节点，且右子节点是红色的（兄弟节点在右边），如果兄弟节点在左边，则对应的就是左节点是红色的）"><a href="#删除操作-case4-（待调整的节点的兄弟节点是黑色的节点，且右子节点是红色的（兄弟节点在右边），如果兄弟节点在左边，则对应的就是左节点是红色的）" class="headerlink" title="删除操作-case4 （待调整的节点的兄弟节点是黑色的节点，且右子节点是红色的（兄弟节点在右边），如果兄弟节点在左边，则对应的就是左节点是红色的）"></a>删除操作-case4 （待调整的节点的兄弟节点是黑色的节点，且右子节点是红色的（兄弟节点在右边），如果兄弟节点在左边，则对应的就是左节点是红色的）</h5><p>case4的操作是真正的节点借调操作，通过将兄弟节点以及兄弟节点的右节点借调过来，并将兄弟节点的右子节点变成红色来达到借调两个黑色节点的目的，这样的话，整棵树还是符合RBTree定义的。</p>
+<p>case4这种情况的发生只有在待删除的节点的兄弟节点为黑，且子节点不全部为黑，才有可能借调到两个节点来做黑色节点使用，从而保持整棵树都符合红黑树的定义。</p>
+<p><img src="/blog/images/hashmap/delcase4.png"></p>
+<p><strong>删除操作的总结</strong></p>
+<p>红黑树的删除操作是最复杂的操作，复杂的地方就在于当删除了黑色节点的时候，如何从兄弟节点去借调节点，以保证树的颜色符合定义。由于红色的兄弟节点是没法借调出黑色节点的，这样只能通过旋转操作让他上升到父节点，而由于它是红节点，所以它的子节点就是黑的，可以借调。</p>
+<p>对于兄弟节点是黑色节点的可以分成3种情况来处理，当所有的兄弟节点的子节点都是黑色节点时，可以直接将兄弟节点变红，这样局部的红黑树颜色是符合定义的。但是整棵树不一定是符合红黑树定义的，需要向上追溯继续调整。</p>
+<p>对于兄弟节点的子节点为左红右黑或者（全部为红）右红左黑这两种情况，可以先将前面的情况通过选择转换为后一种情况，在后一种情况下，因为兄弟节点为黑，兄弟节点的右节点为红，可以借调出两个节点出来做黑节点，这样就可以保证删除了黑节点，整棵树还是符合红黑树的定义的，因为黑色节点的个数没有改变。</p>
+<p>红黑树的删除操作是遇到删除的节点为红色，或者追溯调整到了root节点，这时删除的修复工作完毕。</p>
+<p><strong>红黑树总结</strong></p>
+<p>作为平衡二叉查找树里面众多的实现之一，红黑树无疑是最简洁、实现最为简单的。红黑树通过引入颜色的概念，通过颜色这个约束条件的使用来保持树的高度稳定。作为平衡二叉查找树，旋转是一个必不可少的操作，通过旋转可以降低树的高度，在红黑树里面还可以转换颜色。</p>
+<p>红黑树里面的插入和删除的操作比较难理解，这是要注意记住一点：操作之前红黑树是平衡的，颜色是符合定义的，在操作的时候就需要向兄弟节点、父节点、侄子节点借调和互换颜色，要达到这个目的，就需要不断的进行旋转。所以红黑树的插入删除操作需要不停的旋转，一旦借调了别的节点，删除和插入的节点就会达到局部的平衡（局部符合红黑树的定义），但是被借调的节点就不会平衡了，这时就需要以被借调的节点为起点继续进行调整，直到整棵树都是平衡的。在整个修复的过程中，插入可以分3种情况，删除分4种情况。</p>
+<p>整个红黑树的查找，插入和删除都是O(logN)的，原因就是整个红黑树的高度是logN，查找从根到叶，走过的路径是树的高度，删除和插入操作是从根到叶的，所以经过的路径都是logN。</p>
+<blockquote>
+<p>参考自 <a target="_blank" rel="noopener" href="https://tech.meituan.com/2016/12/02/redblack-tree.html">https://tech.meituan.com/2016/12/02/redblack-tree.html</a></p>
+</blockquote>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/blog/tags/JDK/" rel="tag"># JDK</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/blog/2021/08/12/%E6%AD%BB%E7%A3%95HashMap%E6%BA%90%E7%A0%81(%E4%B8%80)/" rel="prev" title="死磕HashMap源码(一)">
+      <i class="fa fa-chevron-left"></i> 死磕HashMap源码(一)
+    </a></div>
+      <div class="post-nav-item"></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-4"><a class="nav-link" href="#BST"><span class="nav-number">1.</span> <span class="nav-text">BST</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#RBTREE"><span class="nav-number">2.</span> <span class="nav-text">RBTREE</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#RBTree%E7%9A%84%E6%8F%92%E5%85%A5%E6%93%8D%E4%BD%9C"><span class="nav-number">3.</span> <span class="nav-text">RBTree的插入操作</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#%E6%8F%92%E5%85%A5%E6%93%8D%E4%BD%9C-case1-%E7%AC%AC%E4%B8%80%E7%A7%8D%E6%83%85%E5%86%B5%EF%BC%88%E5%8F%94%E5%8F%94%E8%8A%82%E7%82%B9%E4%B9%9F%E4%B8%BA%E7%BA%A2%E8%89%B2%EF%BC%89"><span class="nav-number">3.1.</span> <span class="nav-text">插入操作-case1 第一种情况（叔叔节点也为红色）</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#%E6%8F%92%E5%85%A5%E6%93%8D%E4%BD%9C-case2-%E7%AC%AC%E4%BA%8C%E7%A7%8D%E6%83%85%E5%86%B5%EF%BC%88%E5%8F%94%E5%8F%94%E8%8A%82%E7%82%B9%E4%B8%BA%E7%A9%BA%EF%BC%8C%E4%B8%94%E7%A5%96%E7%88%B6%E8%8A%82%E7%82%B9%E3%80%81%E7%88%B6%E8%8A%82%E7%82%B9%E5%92%8C%E6%96%B0%E8%8A%82%E7%82%B9%E5%A4%84%E4%BA%8E%E4%B8%80%E6%9D%A1%E6%96%9C%E7%BA%BF%E4%B8%8A%EF%BC%89"><span class="nav-number">3.2.</span> <span class="nav-text">插入操作-case2 第二种情况（叔叔节点为空，且祖父节点、父节点和新节点处于一条斜线上）</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#%E6%8F%92%E5%85%A5%E6%93%8D%E4%BD%9C-case3-%E7%AC%AC%E4%B8%89%E7%A7%8D%E6%83%85%E5%86%B5%EF%BC%88%E5%8F%94%E5%8F%94%E7%BB%93%E7%82%B9%E4%B8%BA%E7%A9%BA%EF%BC%8C%E4%B8%94%E7%A5%96%E7%88%B6%E7%BB%93%E7%82%B9%E3%80%81%E7%88%B6%E8%8A%82%E7%82%B9%E5%92%8C%E6%96%B0%E8%8A%82%E7%82%B9%E4%B8%8D%E5%87%BA%E4%B8%8E%E4%B8%80%E6%9D%A1%E6%96%9C%E7%BA%BF%E4%B8%8A%EF%BC%89"><span class="nav-number">3.3.</span> <span class="nav-text">插入操作-case3 第三种情况（叔叔结点为空，且祖父结点、父节点和新节点不出与一条斜线上）</span></a></li></ol></li><li class="nav-item nav-level-4"><a class="nav-link" href="#RBTree%E7%9A%84%E5%88%A0%E9%99%A4%E6%93%8D%E4%BD%9C"><span class="nav-number">4.</span> <span class="nav-text">RBTree的删除操作</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#%E5%88%A0%E9%99%A4%E6%93%8D%E4%BD%9C-case1%EF%BC%88%E5%BE%85%E5%88%A0%E9%99%A4%E7%9A%84%E8%8A%82%E7%82%B9%E7%9A%84%E5%85%84%E5%BC%9F%E8%8A%82%E7%82%B9%E6%98%AF%E7%BA%A2%E8%89%B2%E7%9A%84%E8%8A%82%E7%82%B9%EF%BC%89"><span class="nav-number">4.1.</span> <span class="nav-text">删除操作-case1（待删除的节点的兄弟节点是红色的节点）</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#%E5%88%A0%E9%99%A4%E6%93%8D%E4%BD%9C-case2-%EF%BC%88%E5%BE%85%E5%88%A0%E9%99%A4%E7%9A%84%E8%8A%82%E7%82%B9%E7%9A%84%E5%85%84%E5%BC%9F%E8%8A%82%E7%82%B9%E6%98%AF%E9%BB%91%E8%89%B2%E7%9A%84%E8%8A%82%E7%82%B9%EF%BC%8C%E4%B8%94%E5%85%84%E5%BC%9F%E8%8A%82%E7%82%B9%E7%9A%84%E5%AD%90%E8%8A%82%E7%82%B9%E9%83%BD%E6%98%AF%E9%BB%91%E8%89%B2%E7%9A%84%EF%BC%89"><span class="nav-number">4.2.</span> <span class="nav-text">删除操作-case2 （待删除的节点的兄弟节点是黑色的节点，且兄弟节点的子节点都是黑色的）</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#%E5%88%A0%E9%99%A4%E6%93%8D%E4%BD%9C-case3%EF%BC%88%E5%BE%85%E8%B0%83%E6%95%B4%E7%9A%84%E8%8A%82%E7%82%B9%E7%9A%84%E5%85%84%E5%BC%9F%E8%8A%82%E7%82%B9%E6%98%AF%E9%BB%91%E8%89%B2%E7%9A%84%E8%8A%82%E7%82%B9%EF%BC%8C%E4%B8%94%E5%85%84%E5%BC%9F%E8%8A%82%E7%82%B9%E7%9A%84%E5%B7%A6%E5%AD%90%E8%8A%82%E7%82%B9%E6%98%AF%E7%BA%A2%E8%89%B2%E7%9A%84%EF%BC%8C%E5%8F%B3%E8%8A%82%E7%82%B9%E6%98%AF%E9%BB%91%E8%89%B2%E7%9A%84%EF%BC%88%E5%85%84%E5%BC%9F%E8%8A%82%E7%82%B9%E5%9C%A8%E5%8F%B3%E8%BE%B9%EF%BC%89%EF%BC%8C%E5%A6%82%E6%9E%9C%E5%85%84%E5%BC%9F%E8%8A%82%E7%82%B9%E5%9C%A8%E5%B7%A6%E8%BE%B9%E7%9A%84%E8%AF%9D%EF%BC%8C%E5%B0%B1%E6%98%AF%E5%85%84%E5%BC%9F%E8%8A%82%E7%82%B9%E7%9A%84%E5%8F%B3%E5%AD%90%E8%8A%82%E7%82%B9%E6%98%AF%E7%BA%A2%E8%89%B2%E7%9A%84%EF%BC%8C%E5%B7%A6%E8%8A%82%E7%82%B9%E6%98%AF%E9%BB%91%E8%89%B2%E7%9A%84%EF%BC%89"><span class="nav-number">4.3.</span> <span class="nav-text">删除操作-case3（待调整的节点的兄弟节点是黑色的节点，且兄弟节点的左子节点是红色的，右节点是黑色的（兄弟节点在右边），如果兄弟节点在左边的话，就是兄弟节点的右子节点是红色的，左节点是黑色的）</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#%E5%88%A0%E9%99%A4%E6%93%8D%E4%BD%9C-case4-%EF%BC%88%E5%BE%85%E8%B0%83%E6%95%B4%E7%9A%84%E8%8A%82%E7%82%B9%E7%9A%84%E5%85%84%E5%BC%9F%E8%8A%82%E7%82%B9%E6%98%AF%E9%BB%91%E8%89%B2%E7%9A%84%E8%8A%82%E7%82%B9%EF%BC%8C%E4%B8%94%E5%8F%B3%E5%AD%90%E8%8A%82%E7%82%B9%E6%98%AF%E7%BA%A2%E8%89%B2%E7%9A%84%EF%BC%88%E5%85%84%E5%BC%9F%E8%8A%82%E7%82%B9%E5%9C%A8%E5%8F%B3%E8%BE%B9%EF%BC%89%EF%BC%8C%E5%A6%82%E6%9E%9C%E5%85%84%E5%BC%9F%E8%8A%82%E7%82%B9%E5%9C%A8%E5%B7%A6%E8%BE%B9%EF%BC%8C%E5%88%99%E5%AF%B9%E5%BA%94%E7%9A%84%E5%B0%B1%E6%98%AF%E5%B7%A6%E8%8A%82%E7%82%B9%E6%98%AF%E7%BA%A2%E8%89%B2%E7%9A%84%EF%BC%89"><span class="nav-number">4.4.</span> <span class="nav-text">删除操作-case4 （待调整的节点的兄弟节点是黑色的节点，且右子节点是红色的（兄弟节点在右边），如果兄弟节点在左边，则对应的就是左节点是红色的）</span></a></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">言风</p>
+  <div class="site-description" itemprop="description">让自己更值钱，你值得更好的自己</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/blog/archives/">
+        
+          <span class="site-state-item-count">30</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+        <span class="site-state-item-count">3</span>
+        <span class="site-state-item-name">categories</span>
+      </div>
+      <div class="site-state-item site-state-tags">
+        <span class="site-state-item-count">3</span>
+        <span class="site-state-item-name">tags</span>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">言风</span>
+</div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://muse.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Muse</a>
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/blog/lib/anime.min.js"></script>
+  <script src="/blog/lib/velocity/velocity.min.js"></script>
+  <script src="/blog/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/blog/js/utils.js"></script>
+
+<script src="/blog/js/motion.js"></script>
+
+
+<script src="/blog/js/schemes/muse.js"></script>
+
+
+<script src="/blog/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>
