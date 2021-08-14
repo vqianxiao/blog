@@ -15,32 +15,32 @@ Jdk8以前，使用的是链表去解决hash冲突的，这样就会导致一个
 
 ```java
 final void treeifyBin(Node<K,V>[] tab, int hash) {
-    int n, index; Node<K,V> e;
-    //这里还要进行判断 如果桶容量小于64还是会进行扩容
-    if (tab == null || (n = tab.length) < MIN_TREEIFY_CAPACITY)
+        int n, index; Node<K,V> e;
+        //这里还要进行判断 如果桶容量小于64还是会进行扩容
+        if (tab == null || (n = tab.length) < MIN_TREEIFY_CAPACITY)
         resize();
-    else if ((e = tab[index = (n - 1) & hash]) != null) {
+        else if ((e = tab[index = (n - 1) & hash]) != null) {
         TreeNode<K,V> hd = null, tl = null;
         do {
-            //这里只是将原来的Node替换成了TreeNode
-            TreeNode<K,V> p = replacementTreeNode(e, null);
-            if (tl == null)
-                hd = p;
-            else {
-                p.prev = tl;
-                tl.next = p;
-            }
-            tl = p;
+        //这里只是将原来的Node替换成了TreeNode
+        TreeNode<K,V> p = replacementTreeNode(e, null);
+        if (tl == null)
+        hd = p;
+        else {
+        p.prev = tl;
+        tl.next = p;
+        }
+        tl = p;
         } while ((e = e.next) != null);
         if ((tab[index] = hd) != null)
-            //这里进行红黑树的转化
-            hd.treeify(tab);
-    }
-}
+        //这里进行红黑树的转化
+        hd.treeify(tab);
+        }
+        }
 
-TreeNode<K,V> replacementTreeNode(Node<K,V> p, Node<K,V> next) {
-    return new TreeNode<>(p.hash, p.key, p.value, next);
-}
+        TreeNode<K,V> replacementTreeNode(Node<K,V> p, Node<K,V> next) {
+        return new TreeNode<>(p.hash, p.key, p.value, next);
+        }
 ```
 
 通过上面的代码可以看到，链表转红黑树其实是有两个条件的，一个是链表长度大于8，还有一个就是桶容量要大于64，否则，就只会扩容不会树化。
@@ -51,37 +51,37 @@ TreeNode<K,V> replacementTreeNode(Node<K,V> p, Node<K,V> next) {
 
 ```java
  static final class TreeNode<K,V> extends LinkedHashMap.Entry<K,V> {
-     TreeNode<K,V> parent;  // red-black tree links
-     TreeNode<K,V> left;
-     TreeNode<K,V> right;
-     TreeNode<K,V> prev;    // needed to unlink next upon deletion
-     boolean red;
-     TreeNode(int hash, K key, V val, Node<K,V> next) {
-         super(hash, key, val, next);
-     }
- }
+    TreeNode<K,V> parent;  // red-black tree links
+    TreeNode<K,V> left;
+    TreeNode<K,V> right;
+    TreeNode<K,V> prev;    // needed to unlink next upon deletion
+    boolean red;
+    TreeNode(int hash, K key, V val, Node<K,V> next) {
+        super(hash, key, val, next);
+    }
+}
 ```
 
 上面看了链表树化的操作，然后来看下树转链表的操作。
 
 ```java
 final Node<K,V> untreeify(HashMap<K,V> map) {
-    Node<K,V> hd = null, tl = null;
-    //这里遍历树节点 然后转化成Node节点 hd是头 tl是尾 根据树节点保存的顺序恢复链表的顺序
-    for (Node<K,V> q = this; q != null; q = q.next) {
+        Node<K,V> hd = null, tl = null;
+        //这里遍历树节点 然后转化成Node节点 hd是头 tl是尾 根据树节点保存的顺序恢复链表的顺序
+        for (Node<K,V> q = this; q != null; q = q.next) {
         Node<K,V> p = map.replacementNode(q, null);
         if (tl == null)
-            hd = p;
+        hd = p;
         else
-            tl.next = p;
+        tl.next = p;
         tl = p;
-    }
-    return hd;
-}
+        }
+        return hd;
+        }
 
-Node<K,V> replacementNode(Node<K,V> p, Node<K,V> next) {
-    return new Node<>(p.hash, p.key, p.value, next);
-}
+        Node<K,V> replacementNode(Node<K,V> p, Node<K,V> next) {
+        return new Node<>(p.hash, p.key, p.value, next);
+        }
 ```
 
 我们已经知道了链表转树的条件，那么树是什么时候转成链表呢？其实可以猜个大概，因为扩容和删除节点的都会让树节点变少。
@@ -89,6 +89,26 @@ Node<K,V> replacementNode(Node<K,V> p, Node<K,V> next) {
 1.扩容的时候。如果扩容那部分仔细看的话，就知道扩容的时候，其实就是把桶里的元素的index进行重新分配，让它们更分散，也包括树。这个时候就需要把树像链表一样拆开，然后去看这些元素哪些该喊0哪些该喊1，进而给它们重新分配桶，这样一个大树可能就变成了一颗小树，如果小于等于非树化阈值，那么就转成链表。
 
 2.删除节点的时候。
+
+扩容的时候判断条件就是小于等于`UNTREEIFY_THRESHOLD`就会将树转成链表。但是删除的时候不是通过这个阈值控制的，可以看下条件。
+
+```java
+//movable 这个参数删除的时候是写死的为true 所以只要root.right == null 或者root.left == null 或者 root.left.left == null
+//可以根据红黑树的性质去推断，当根节点的右节点为空时，从根节点出发路径有一个黑色节点。那么此时从根节点出发，到左边的NIL节点应该只有一个红色节点
+//此时树只有2个元素。从根出发左节点为空同理。也是只有2个元素。
+//如果左节点的左节点为空那么左节点为黑色，右节点为红色及它的两个子节点为黑色，那么此时最多5个元素。
+//但是为什么不用UNTREEIFY_THRESHOLD去计算 我还是没有想明白。不过作用是类似的，只是少了个树里6个元素的情况
+if (root == null
+    || (movable
+        && (root.right == null
+            || (rl = root.left) == null
+            || rl.left == null))) {
+    tab[index] = first.untreeify(map);  // too small
+    return;
+}
+```
+
+
 
 为了深入理解红黑树，需要先从二叉查找树说起。
 
