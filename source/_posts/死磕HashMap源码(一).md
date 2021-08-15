@@ -16,7 +16,7 @@ HashMap是我们平时常用到的kev-value存储的集合。首先来看类定�
 
 ```java
 public class HashMap<K,V> extends AbstractMap<K,V>
-    implements Map<K,V>, Cloneable, Serializable{}
+        implements Map<K,V>, Cloneable, Serializable{}
 ```
 
 继承自AbstractMap，其实就是提供一些Map的通用实现，来减少新开发一个Map时不必要的代码。
@@ -57,7 +57,7 @@ transient int size;
 transient int modCount;
 
 //要调整大小的下一个大小值（容量 * 负载因子）
-int threshold;
+        int threshold;
 
 //哈希表中的负载因子
 final float loadFactor;
@@ -69,43 +69,43 @@ final float loadFactor;
 
 ```java
 static class Node<K,V> implements Map.Entry<K,V> {
-  final int hash;
-  final K key;
-  V value;
-  Node<K,V> next;
+    final int hash;
+    final K key;
+    V value;
+    Node<K,V> next;
 
-  Node(int hash, K key, V value, Node<K,V> next) {
-    this.hash = hash;
-    this.key = key;
-    this.value = value;
-    this.next = next;
-  }
-
-  public final K getKey()        { return key; }
-  public final V getValue()      { return value; }
-  public final String toString() { return key + "=" + value; }
-
-  public final int hashCode() {
-    return Objects.hashCode(key) ^ Objects.hashCode(value);
-  }
-
-  public final V setValue(V newValue) {
-    V oldValue = value;
-    value = newValue;
-    return oldValue;
-  }
-
-  public final boolean equals(Object o) {
-    if (o == this)
-      return true;
-    if (o instanceof Map.Entry) {
-      Map.Entry<?,?> e = (Map.Entry<?,?>)o;
-      if (Objects.equals(key, e.getKey()) &&
-          Objects.equals(value, e.getValue()))
-        return true;
+    Node(int hash, K key, V value, Node<K,V> next) {
+        this.hash = hash;
+        this.key = key;
+        this.value = value;
+        this.next = next;
     }
-    return false;
-  }
+
+    public final K getKey()        { return key; }
+    public final V getValue()      { return value; }
+    public final String toString() { return key + "=" + value; }
+
+    public final int hashCode() {
+        return Objects.hashCode(key) ^ Objects.hashCode(value);
+    }
+
+    public final V setValue(V newValue) {
+        V oldValue = value;
+        value = newValue;
+        return oldValue;
+    }
+
+    public final boolean equals(Object o) {
+        if (o == this)
+            return true;
+        if (o instanceof Map.Entry) {
+            Map.Entry<?,?> e = (Map.Entry<?,?>)o;
+            if (Objects.equals(key, e.getKey()) &&
+                    Objects.equals(value, e.getValue()))
+                return true;
+        }
+        return false;
+    }
 }
 ```
 
@@ -119,66 +119,66 @@ static class Node<K,V> implements Map.Entry<K,V> {
 
 ```java
 public V put(K key, V value) {
-  //这里看到拿到hash码然后进行putVal
-  return putVal(hash(key), key, value, false, true);
-}
+        //这里看到拿到hash码然后进行putVal
+        return putVal(hash(key), key, value, false, true);
+        }
 
 final V putVal(int hash, K key, V value, boolean onlyIfAbsent,
-               boolean evict) {
-  Node<K,V>[] tab; Node<K,V> p; int n, i;
-  //先看当前table是不是空的 空的先进行扩容
-  if ((tab = table) == null || (n = tab.length) == 0)
-    n = (tab = resize()).length;
-  //判断当前元素在不在hash表中 如果不在 那么直接创建新的节点
-  if ((p = tab[i = (n - 1) & hash]) == null)
-    tab[i] = newNode(hash, key, value, null);
-  else {
-    //发生碰撞
-    Node<K,V> e; K k;
-    //hash码相等 && key相等 这里也是为什么重写hashCode 还要重写equals
-    if (p.hash == hash &&
+        boolean evict) {
+        Node<K,V>[] tab; Node<K,V> p; int n, i;
+        //先看当前table是不是空的 空的先进行扩容
+        if ((tab = table) == null || (n = tab.length) == 0)
+        n = (tab = resize()).length;
+        //判断当前元素在不在hash表中 如果不在 那么直接创建新的节点
+        if ((p = tab[i = (n - 1) & hash]) == null)
+        tab[i] = newNode(hash, key, value, null);
+        else {
+        //发生碰撞
+        Node<K,V> e; K k;
+        //hash码相等 && key相等 这里也是为什么重写hashCode 还要重写equals
+        if (p.hash == hash &&
         ((k = p.key) == key || (key != null && key.equals(k))))
-      e = p;
-    else if (p instanceof TreeNode)
-      //当前节点已经是树节点了 那么直接使用树节点的插入方法
-      e = ((TreeNode<K,V>)p).putTreeVal(this, tab, hash, key, value);
-    else {
-      //此时为链表
-      for (int binCount = 0; ; ++binCount) {
+        e = p;
+        else if (p instanceof TreeNode)
+        //当前节点已经是树节点了 那么直接使用树节点的插入方法
+        e = ((TreeNode<K,V>)p).putTreeVal(this, tab, hash, key, value);
+        else {
+        //此时为链表
+        for (int binCount = 0; ; ++binCount) {
         if ((e = p.next) == null) {
-          //找到最后一个节点然后将新创建的节点插入 尾插法
-          p.next = newNode(hash, key, value, null);
-          //当链表长度大于树化阈值 树化
-          if (binCount >= TREEIFY_THRESHOLD - 1) // -1 for 1st
-            treeifyBin(tab, hash);
-          break;
+        //找到最后一个节点然后将新创建的节点插入 尾插法
+        p.next = newNode(hash, key, value, null);
+        //当链表长度大于树化阈值 树化
+        if (binCount >= TREEIFY_THRESHOLD - 1) // -1 for 1st
+        treeifyBin(tab, hash);
+        break;
         }
         //遍历链表中的key是否存在重复
         if (e.hash == hash &&
-            ((k = e.key) == key || (key != null && key.equals(k))))
-          break;
+        ((k = e.key) == key || (key != null && key.equals(k))))
+        break;
         p = e;
-      }
-    }
-    //e不等于空 就是key可以认为是同一个key
-    if (e != null) { // existing mapping for key
-      V oldValue = e.value;
-      if (!onlyIfAbsent || oldValue == null)
+        }
+        }
+        //e不等于空 就是key可以认为是同一个key
+        if (e != null) { // existing mapping for key
+        V oldValue = e.value;
+        if (!onlyIfAbsent || oldValue == null)
         //更新value
         e.value = value;
-      //回调通知
-      afterNodeAccess(e);
-      return oldValue;
-    }
-  }
-  ++modCount;
-  if (++size > threshold)
-    //扩容
-    resize();
-  //回调通知
-  afterNodeInsertion(evict);
-  return null;
-}
+        //回调通知
+        afterNodeAccess(e);
+        return oldValue;
+        }
+        }
+        ++modCount;
+        if (++size > threshold)
+        //扩容
+        resize();
+        //回调通知
+        afterNodeInsertion(evict);
+        return null;
+        }
 ```
 
 这里说一下为什么是用(n - 1) & hash。这个是一个取余操作。取余操作中如果除数是2的幂则等价于与其除数减一的与(&)操作，hash%length==hash&(length-1)，前提是长度2的n次方，采用二进制位操作能提高运算效率。这也解释了为什么容量必须是2的幂了。
@@ -187,95 +187,95 @@ final V putVal(int hash, K key, V value, boolean onlyIfAbsent,
 
 ```java
 final Node<K,V>[] resize() {
-  Node<K,V>[] oldTab = table;
-  int oldCap = (oldTab == null) ? 0 : oldTab.length;
-  //以前的扩容阈值
-  int oldThr = threshold;
-  int newCap, newThr = 0;
-  if (oldCap > 0) {
-    //容量已经最大 那么直接修改threshold返回
-    if (oldCap >= MAXIMUM_CAPACITY) {
-      threshold = Integer.MAX_VALUE;
-      return oldTab;
-    }
-    //旧容量小于最大值 threshold直接翻倍 容量也翻倍
-    else if ((newCap = oldCap << 1) < MAXIMUM_CAPACITY &&
-             oldCap >= DEFAULT_INITIAL_CAPACITY)
-      newThr = oldThr << 1; // double threshold
-  }
-  else if (oldThr > 0) // initial capacity was placed in threshold
-    newCap = oldThr;
-  else {               // zero initial threshold signifies using defaults
-    newCap = DEFAULT_INITIAL_CAPACITY;
-    //新的容量上限 = 负载因子 * 容量
-    newThr = (int)(DEFAULT_LOAD_FACTOR * DEFAULT_INITIAL_CAPACITY);
-  }
-  //其实这里比较绕 就是创建的时候指定初始化容量如1 然后第一个数据进来 进入resize中
-  if (newThr == 0) {
-    //2*0.75 = 1.5 这里newCap是因为上面进行了容量翻倍
-    float ft = (float)newCap * loadFactor;
-    //newThr = 1
-    newThr = (newCap < MAXIMUM_CAPACITY && ft < (float)MAXIMUM_CAPACITY ?
-              (int)ft : Integer.MAX_VALUE);
-  }
-  threshold = newThr;
-  @SuppressWarnings({"rawtypes","unchecked"})
+        Node<K,V>[] oldTab = table;
+        int oldCap = (oldTab == null) ? 0 : oldTab.length;
+        //以前的扩容阈值
+        int oldThr = threshold;
+        int newCap, newThr = 0;
+        if (oldCap > 0) {
+        //容量已经最大 那么直接修改threshold返回
+        if (oldCap >= MAXIMUM_CAPACITY) {
+        threshold = Integer.MAX_VALUE;
+        return oldTab;
+        }
+        //旧容量小于最大值 threshold直接翻倍 容量也翻倍
+        else if ((newCap = oldCap << 1) < MAXIMUM_CAPACITY &&
+        oldCap >= DEFAULT_INITIAL_CAPACITY)
+        newThr = oldThr << 1; // double threshold
+        }
+        else if (oldThr > 0) // initial capacity was placed in threshold
+        newCap = oldThr;
+        else {               // zero initial threshold signifies using defaults
+        newCap = DEFAULT_INITIAL_CAPACITY;
+        //新的容量上限 = 负载因子 * 容量
+        newThr = (int)(DEFAULT_LOAD_FACTOR * DEFAULT_INITIAL_CAPACITY);
+        }
+        //其实这里比较绕 就是创建的时候指定初始化容量如1 然后第一个数据进来 进入resize中
+        if (newThr == 0) {
+        //2*0.75 = 1.5 这里newCap是因为上面进行了容量翻倍
+        float ft = (float)newCap * loadFactor;
+        //newThr = 1
+        newThr = (newCap < MAXIMUM_CAPACITY && ft < (float)MAXIMUM_CAPACITY ?
+        (int)ft : Integer.MAX_VALUE);
+        }
+        threshold = newThr;
+@SuppressWarnings({"rawtypes","unchecked"})
   Node<K,V>[] newTab = (Node<K,V>[])new Node[newCap];
-  table = newTab;
-  if (oldTab != null) {
-    for (int j = 0; j < oldCap; ++j) {
-      //遍历旧的table
-      Node<K,V> e;
-      if ((e = oldTab[j]) != null) {
+        table = newTab;
+        if (oldTab != null) {
+        for (int j = 0; j < oldCap; ++j) {
+        //遍历旧的table
+        Node<K,V> e;
+        if ((e = oldTab[j]) != null) {
         oldTab[j] = null;
         if (e.next == null)
-          //如果当前节点不为空并且后继节点为空 直接在newTab找到位置赋值
-          newTab[e.hash & (newCap - 1)] = e;
+        //如果当前节点不为空并且后继节点为空 直接在newTab找到位置赋值
+        newTab[e.hash & (newCap - 1)] = e;
         else if (e instanceof TreeNode)
-          //如果是树的结构 进行树的处理
-          ((TreeNode<K,V>)e).split(this, newTab, j, oldCap);
+        //如果是树的结构 进行树的处理
+        ((TreeNode<K,V>)e).split(this, newTab, j, oldCap);
         else { // preserve order
-          //如果是链表 需要保持原来的顺序
-          //这里根据字段名猜测应该是2个链表 一个lo队列 一个hi队列
-          Node<K,V> loHead = null, loTail = null;
-          Node<K,V> hiHead = null, hiTail = null;
-          Node<K,V> next;
-          do {
-            next = e.next;
-            //这里根据e.hash & oldCap的结果来判断节点属于lo还是hi
-            if ((e.hash & oldCap) == 0) {
-              //尾插法
-              if (loTail == null)
-                loHead = e;
-              else
-                loTail.next = e;
-              loTail = e;
-            }
-            else {
-              //e.hash & oldCap 结果只会为0或者为1
-              if (hiTail == null)
-                hiHead = e;
-              else
-                hiTail.next = e;
-              hiTail = e;
-            }
-          } while ((e = next) != null);
-          //如果loTail非空 那么将lo链表放到newTab[j]的位置上
-          if (loTail != null) {
-            loTail.next = null;
-            newTab[j] = loHead;
-          }
-          //如果hiTail非空 那么将hi链表放到newTab[j+oldCap]的位置上
-          if (hiTail != null) {
-            hiTail.next = null;
-            newTab[j + oldCap] = hiHead;
-          }
+        //如果是链表 需要保持原来的顺序
+        //这里根据字段名猜测应该是2个链表 一个lo队列 一个hi队列
+        Node<K,V> loHead = null, loTail = null;
+        Node<K,V> hiHead = null, hiTail = null;
+        Node<K,V> next;
+        do {
+        next = e.next;
+        //这里根据e.hash & oldCap的结果来判断节点属于lo还是hi
+        if ((e.hash & oldCap) == 0) {
+        //尾插法
+        if (loTail == null)
+        loHead = e;
+        else
+        loTail.next = e;
+        loTail = e;
         }
-      }
-    }
-  }
-  return newTab;
-}
+        else {
+        //e.hash & oldCap 结果只会为0或者为1
+        if (hiTail == null)
+        hiHead = e;
+        else
+        hiTail.next = e;
+        hiTail = e;
+        }
+        } while ((e = next) != null);
+        //如果loTail非空 那么将lo链表放到newTab[j]的位置上
+        if (loTail != null) {
+        loTail.next = null;
+        newTab[j] = loHead;
+        }
+        //如果hiTail非空 那么将hi链表放到newTab[j+oldCap]的位置上
+        if (hiTail != null) {
+        hiTail.next = null;
+        newTab[j + oldCap] = hiHead;
+        }
+        }
+        }
+        }
+        }
+        return newTab;
+        }
 ```
 
 首先来说下，HashMap扩容是2倍扩容的。所以也就意味着原来链表里的key有两个去处，要么是newTab[j] 要么是newTab[j+oldCap]。这个分链表的操作 其实有点像我们站队，老师让我们一二报数，然后按照喊的数字去分组一样。`e.hash & oldCap` 这个操作就是决定这个节点到底喊的是0还是1的关键。
@@ -283,8 +283,8 @@ final Node<K,V>[] resize() {
 有三点明确下：
 
 -  oldCap一定是2的整数次幂，这里假设是2^m
-- newCap是oldCap的两倍，则newCap为2^(m+1)
-- hash对数组大小取模(n-1)&hash其实就是取hash的低m位
+-  newCap是oldCap的两倍，则newCap为2^(m+1)
+-  hash对数组大小取模(n-1)&hash其实就是取hash的低m位
 
 假设oldCap = 16 即2^4
 
@@ -302,9 +302,9 @@ HashMap中，决定key位置的就是hash函数，看下哈希函数如何实现
 
 ```java
 static final int hash(Object key) {
-  int h;
-  return (key == null) ? 0 : (h = key.hashCode()) ^ (h >>> 16);
-}
+        int h;
+        return (key == null) ? 0 : (h = key.hashCode()) ^ (h >>> 16);
+        }
 ```
 
 这里看到HashMap对hashCode进行了高16位和低16位进行了异或，这充分利用了高半位和低半位的信息，对低位进行扰动，目的就是使该hashCode映射成数组下标是可以更分散。以初始长度为例，16-1=15，与某散列值“与”操作如下

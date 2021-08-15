@@ -5,7 +5,6 @@ category:  源码解析
 description: 死磕ThreadLocal源码
 tags: JDK
 date: 2021/08/13 21:52:10
-
 ---
 
 `ThreadLocal` 是我们常用的和线程绑定的线程安全的对象，别的线程是无法访问的，所以该对象不存在线程安全问题。今天就来看下源码，看下ThreadLocal是怎么做的吧。
