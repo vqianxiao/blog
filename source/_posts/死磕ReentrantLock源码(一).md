@@ -369,37 +369,37 @@ acquire方法中还调用了acquireQueued()方法，还有addWaiter()方法。`N
     final boolean acquireQueued(final Node node, int arg) {
         boolean failed = true;
         try {
-        boolean interrupted = false;
-        for (;;) {
-final Node p = node.predecessor();
-        //p == head 说明当前node已经是第一个节点了 所以再尝试获取一下锁 拿到锁，将node赋值给head 返回false
-        if (p == head && tryAcquire(arg)) {
-        setHead(node);
-        p.next = null; // help GC
-        failed = false;
-        return interrupted;
-        }
-        //shouldParkAfterFailedAcquire这个放回返回true 将会调用parkAndCheckInterrupt进入阻塞状态
-        if (shouldParkAfterFailedAcquire(p, node) &&
-        parkAndCheckInterrupt())
-        interrupted = true;
-        }
+            boolean interrupted = false;
+            for (;;) {
+                final Node p = node.predecessor();
+                //p == head 说明当前node已经是第一个节点了 所以再尝试获取一下锁 拿到锁，将node赋值给head 返回false
+                if (p == head && tryAcquire(arg)) {
+                    setHead(node);
+                    p.next = null; // help GC
+                    failed = false;
+                    return interrupted;
+                }
+                //shouldParkAfterFailedAcquire这个放回返回true 将会调用parkAndCheckInterrupt进入阻塞状态
+                if (shouldParkAfterFailedAcquire(p, node) &&
+                    parkAndCheckInterrupt())
+                    interrupted = true;
+            }
         } finally {
-        if (failed)
-        cancelAcquire(node);
+            if (failed)
+                cancelAcquire(node);
         }
-        }
+    }
 
-//获取前一个节点
-final Node predecessor() throws NullPointerException {
+	//获取前一个节点
+    final Node predecessor() throws NullPointerException {
         Node p = prev;
         if (p == null)
-        throw new NullPointerException();
+            throw new NullPointerException();
         else
-        return p;
-        }
+            return p;
+    }
 
-private static boolean shouldParkAfterFailedAcquire(Node pred, Node node) {
+    private static boolean shouldParkAfterFailedAcquire(Node pred, Node node) {
         //获取前置节点的waitStatus
         //CANCELLED 1 取消
         //SIGNAL -1 表明后续线程需要运行 indicate successor's thread needs unparking
@@ -407,39 +407,39 @@ private static boolean shouldParkAfterFailedAcquire(Node pred, Node node) {
         //PROPAGATE -3 indicate the next acquireShared should unconditionally propagate
         int ws = pred.waitStatus;
         if (ws == Node.SIGNAL)
-        /*
-         * This node has already set status asking a release
-         * to signal it, so it can safely park.
-         */
-        return true;
+            /*
+             * This node has already set status asking a release
+             * to signal it, so it can safely park.
+             */
+            return true;
         if (ws > 0) {
-        //前面的节点被取消 跳过已经取消等待锁的节点 往前找直到找到排队的节点
-        /*
-         * Predecessor was cancelled. Skip over predecessors and
-         * indicate retry.
-         */
-        do {
-        node.prev = pred = pred.prev;
-        } while (pred.waitStatus > 0);
-        pred.next = node;
+            //前面的节点被取消 跳过已经取消等待锁的节点 往前找直到找到排队的节点
+            /*
+             * Predecessor was cancelled. Skip over predecessors and
+             * indicate retry.
+             */
+            do {
+                node.prev = pred = pred.prev;
+            } while (pred.waitStatus > 0);
+            pred.next = node;
         } else {
-        /*
-         * waitStatus must be 0 or PROPAGATE.  Indicate that we
-         * need a signal, but don't park yet.  Caller will need to
-         * retry to make sure it cannot acquire before parking.
-         */
-        //waitStatus必须为0或者-3。表明我们需要一个信号，但是不要阻塞。调用者需要重试来确认暂停前无法获得锁
-        //把前一个节点状态赋值成SIGNAL 让线程重试获取锁，避免不必要的阻塞
-        compareAndSetWaitStatus(pred, ws, Node.SIGNAL);
+            /*
+             * waitStatus must be 0 or PROPAGATE.  Indicate that we
+             * need a signal, but don't park yet.  Caller will need to
+             * retry to make sure it cannot acquire before parking.
+             */
+            //waitStatus必须为0或者-3。表明我们需要一个信号，但是不要阻塞。调用者需要重试来确认暂停前无法获得锁
+            //把前一个节点状态赋值成SIGNAL 让线程重试获取锁，避免不必要的阻塞
+            compareAndSetWaitStatus(pred, ws, Node.SIGNAL);
         }
         return false;
-        }
+    }
 
-//将线程挂起然后等待唤醒并返回当前线程是否被中断
-private final boolean parkAndCheckInterrupt() {
+	//将线程挂起然后等待唤醒并返回当前线程是否被中断
+    private final boolean parkAndCheckInterrupt() {
         LockSupport.park(this);
         return Thread.interrupted();
-        }
+    }
 ```
 
 这里需要注意SIGNAL这个状态不是为线程自己设置的，是为前一个节点设置的。
