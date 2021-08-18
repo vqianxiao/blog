@@ -1,8 +1,8 @@
 ---
 layout:    post
-title:     死磕ReentrantLock源码（一）
+title:     死磕ReentrantLock源码(一)
 category:  JUC
-description: 死磕ReentrantLock源码（一）
+description: 死磕ReentrantLock源码(一)
 tags:
 - JDK
 - JUC
