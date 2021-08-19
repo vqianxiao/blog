@@ -17,23 +17,23 @@ date: 2021/08/19 00:28:10
 由于公平锁和非公平锁的释放是一样的，所以unlock的逻辑并没有放在FairSync或NonfairSync中，而是直接定义在ReentrantLock类中：
 
 ```java
-    public void unlock() {
-        sync.release(1);
-    }
+public void unlock() {
+    sync.release(1);
+}
 ```
 
 release方法定义在AQS类中，描述了释放锁的流程
 
 ```java
-    public final boolean release(int arg) {
-        if (tryRelease(arg)) {
-            Node h = head;
-            if (h != null && h.waitStatus != 0)
-                unparkSuccessor(h);
-            return true;
-        }
-        return false;
+public final boolean release(int arg) {
+    if (tryRelease(arg)) {
+        Node h = head;
+        if (h != null && h.waitStatus != 0)
+            unparkSuccessor(h);
+        return true;
     }
+    return false;
+}
 ```
 
 相比于获取锁，释放锁的过程简单很多，只涉及两个函数调用。
@@ -57,22 +57,22 @@ if (h != null && h.waitStatus != 0) 这个条件h!=null 就是头节点不为空
 tryRelease是由ReentrantLock的静态类Sync实现。这里要记住，能执行释放锁的线程，一定是已经拿到锁的线程。因为是已经拿到锁的线程去释放锁，所以不会有任何竞争，也没有任何CAS操作。
 
 ```java
-    protected final boolean tryRelease(int releases) {
-        //先将持有锁的线程数减1 unlock时传入的参数为1
-        //这里的操作主要是针对可重入锁的情况 c可能是大于1的
-        int c = getState() - releases;
-        //释放锁的线程和持有锁的线程必须一致
-        if (Thread.currentThread() != getExclusiveOwnerThread())
-            throw new IllegalMonitorStateException();
-        boolean free = false;
-        //没有线程持有锁了 所以锁可以直接释放了 否则只是减少持有锁的线程数
-        if (c == 0) {
-            free = true;
-            setExclusiveOwnerThread(null);
-        }
-        setState(c);
-        return free;
+protected final boolean tryRelease(int releases) {
+    //先将持有锁的线程数减1 unlock时传入的参数为1
+    //这里的操作主要是针对可重入锁的情况 c可能是大于1的
+    int c = getState() - releases;
+    //释放锁的线程和持有锁的线程必须一致
+    if (Thread.currentThread() != getExclusiveOwnerThread())
+        throw new IllegalMonitorStateException();
+    boolean free = false;
+    //没有线程持有锁了 所以锁可以直接释放了 否则只是减少持有锁的线程数
+    if (c == 0) {
+        free = true;
+        setExclusiveOwnerThread(null);
     }
+    setState(c);
+    return free;
+}
 ```
 
 ##### unparkSuccessor
@@ -80,27 +80,27 @@ tryRelease是由ReentrantLock的静态类Sync实现。这里要记住，能执�
 锁成功释放之后，就需要唤醒后续节点了。这个方法定义在AQS中。
 
 ```java
- private void unparkSuccessor(Node node) {
-        
-        int ws = node.waitStatus;
-     	//如果head节点的ws小于0直接赋值成0
-        if (ws < 0)
-            compareAndSetWaitStatus(node, ws, 0);
+private void unparkSuccessor(Node node) {
 
-        //通常情况下，要唤醒的节点是自己的后继节点
-     	//如果后继节点存在并且在等待锁，那么直接唤醒它
-     	//但是有可能存在后继节点取消等待锁 的情况
-        //这个时候从尾节点开始向前找，直到找到最靠前的ws<=0的节点 然后唤醒它
-        Node s = node.next;
-        if (s == null || s.waitStatus > 0) {
-            s = null;
-            for (Node t = tail; t != null && t != node; t = t.prev)
-                if (t.waitStatus <= 0)
-                    s = t;
-        }
-        if (s != null)
-            LockSupport.unpark(s.thread);
+    int ws = node.waitStatus;
+    //如果head节点的ws小于0直接赋值成0
+    if (ws < 0)
+        compareAndSetWaitStatus(node, ws, 0);
+
+    //通常情况下，要唤醒的节点是自己的后继节点
+    //如果后继节点存在并且在等待锁，那么直接唤醒它
+    //但是有可能存在后继节点取消等待锁 的情况
+    //这个时候从尾节点开始向前找，直到找到最靠前的ws<=0的节点 然后唤醒它
+    Node s = node.next;
+    if (s == null || s.waitStatus > 0) {
+        s = null;
+        for (Node t = tail; t != null && t != node; t = t.prev)
+            if (t.waitStatus <= 0)
+                s = t;
     }
+    if (s != null)
+        LockSupport.unpark(s.thread);
+}
 ```
 
 当前节点的前驱节点的waitStatus这个属性是用来决定是否要挂起当前线程的，并且如果一个线程被挂起，它的前驱节点的waitStatus必然是Node.SIGNAL。Node.CANCELLED值为1，所以只要不是取消，就会被唤醒。
