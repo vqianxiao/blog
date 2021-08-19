@@ -7,7 +7,7 @@ tags:
 - JDK
 - JUC
 - AQS
-  date: 2021/08/19 00:28:10
+date: 2021/08/19 00:28:10
 ---
 
 上一篇讲了ReentrantLock的NonfairSync的获取锁的操作，这篇主要来看一下释放锁的操作。这里要提一下，Java的内置锁在退出临界区之后会自动释放，但是ReentrantLock这样的显式锁是需要手动释放的，所以在加锁的时候一定要记得在finally语句块中释放锁！！！
