@@ -32,7 +32,6 @@
 <meta property="article:author" content="言风">
 <meta property="article:tag" content="JDK">
 <meta property="article:tag" content="JUC">
-<meta property="article:tag" content="AQS">
 <meta name="twitter:card" content="summary">
 
 <link rel="canonical" href="https://vqianxiao.github.io/blog/2021/08/18/AQS%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%E4%B9%8B%E7%8B%AC%E5%8D%A0%E9%94%81%E7%9A%84%E9%87%8A%E6%94%BE/">
@@ -211,10 +210,10 @@
 <p>相比于获取锁，释放锁的过程简单很多，只涉及两个函数调用。</p>
 <ul>
 <li><p>tryRelease(arg)</p>
-<p>该方法由继承AQS的子类实现，为释放锁的具体逻辑</p>
+<p>  该方法由继承AQS的子类实现，为释放锁的具体逻辑</p>
 </li>
 <li><p>unparkSuccessor(h)</p>
-<p>唤醒后继线程</p>
+<p>  唤醒后继线程</p>
 </li>
 </ul>
 <p>这里要注意一下，只要tryRelease返回true，那么后续操作不会影响最终release返回true的结果。</p>
@@ -274,7 +273,6 @@
           <div class="post-tags">
               <a href="/blog/tags/JDK/" rel="tag"># JDK</a>
               <a href="/blog/tags/JUC/" rel="tag"># JUC</a>
-              <a href="/blog/tags/AQS/" rel="tag"># AQS</a>
           </div>
 
         

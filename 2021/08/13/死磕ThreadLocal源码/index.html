@@ -200,7 +200,7 @@
 
       
         <p><code>ThreadLocal</code> 是我们常用的和线程绑定的线程安全的对象，别的线程是无法访问的，所以该对象不存在线程安全问题。今天就来看下源码，看下ThreadLocal是怎么做的吧。</p>
-<p>先看下用法</p>
+<p>先看下用法 </p>
 <figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">private</span> <span class="keyword">static</span> ThreadLocal threadLocal = <span class="keyword">new</span> ThreadLocal();</span><br><span class="line">threadLocal.set(<span class="keyword">new</span> SimpleDateFormat(<span class="string">&quot;yyyy-MM-dd ss:hh:ss&quot;</span>));</span><br></pre></td></tr></table></figure>
 
 <h5 id="插入"><a href="#插入" class="headerlink" title="插入"></a>插入</h5><p>这里直接看set()方法做了点啥</p>
