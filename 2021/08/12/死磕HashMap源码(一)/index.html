@@ -247,7 +247,7 @@
 <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">  	10100101 11000100 00100101</span><br><span class="line">&amp;	00000000 00000000 00001111</span><br><span class="line">----------------------------------</span><br><span class="line">	00000000 00000000 00000101       //高位全部归零，只保留末四位</span><br></pre></td></tr></table></figure>
 
 <p>如果散列值算的不够分散，只取最后几位的话，分布上成等差数列的话，碰撞就会很严重。这时候扰动函数的价值就出来了。</p>
-<p><img src="/blog/images/hashmap/hashcode.png"></p>
+<p><img src="https://vqianxiao.github.io/blog/images/hashmap/hashcode.png"></p>
 <p>右移16位，正好是32bit的一半，自己的高半区和低半区做异或，就是为了混合原始哈希吗的高位和低位，以此来加大随机性。而且混合后的低位参杂了高位的部分特征，这样高位的信息也被变相保留下来。</p>
 <p>总结一下HashMap插入数据流程：</p>
 <p>1.对key重新计算一个扰动过的hash值，(key == null) ? 0 : (h = key.hashCode()) ^ (h &gt;&gt;&gt; 16);</p>

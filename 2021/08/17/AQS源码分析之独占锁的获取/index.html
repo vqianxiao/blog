@@ -230,8 +230,7 @@
 <p>AQS怎么去使用这个队列呢，既然是双向链表，那么肯定要有一个头节点和尾节点。</p>
 <figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">//头结点，不代表任何线程，只是一个哑节点</span></span><br><span class="line"><span class="keyword">private</span> <span class="keyword">transient</span> <span class="keyword">volatile</span> Node head;</span><br><span class="line"><span class="comment">//尾节点，每一个请求锁的线程都会被加到尾节点</span></span><br><span class="line"><span class="keyword">private</span> <span class="keyword">transient</span> <span class="keyword">volatile</span> Node tail;</span><br></pre></td></tr></table></figure>
 
-<p>在AQS中的队列是一个CLH队列，它的head节点永远是一个哑节点(dummy node)，它不代表任何线程（某些情况下可以看做是代表了当前持有锁的线程），<strong>因此head所指向的Node的thread属性永远是null</strong>。只有从次节点往后的所有节点才代表了所有等待锁的线程。也就是说，在当前线程没有抢到锁被包装成Node扔到队列中时，即使队列是空的，它也会排在第二个，我们会在它的前面新建一个dummy节点。为了便于描述，除去head节点的队列称作等待队列，这个队列中的节点代表等待锁的线程。</p>
-<p><img src="/blog/images/aqs/syncqueue.png"></p>
+<p>在AQS中的队列是一个CLH队列，它的head节点永远是一个哑节点(dummy node)，它不代表任何线程（某些情况下可以看做是代表了当前持有锁的线程），<strong>因此head所指向的Node的thread属性永远是null</strong>。只有从次节点往后的所有节点才代表了所有等待锁的线程。也就是说，在当前线程没有抢到锁被包装成Node扔到队列中时，即使队列是空的，它也会排在第二个，我们会在它的前面新建一个dummy节点。为了便于描述，除去head节点的队列称作等待队列，这个队列中的节点代表等待锁的线程。<br><img src="https://vqianxiao.github.io/blog/images/aqs/syncqueue.png"></p>
 <p>结合图片，总结下Node节点各个属性的含义：</p>
 <ul>
 <li>thread：当前Node所代表的线程</li>
@@ -298,7 +297,7 @@
 <p>​    3.修改原来的尾节点，使它的next指向当前节点</p>
 <p>但是需要注意，这三步并不是一个原子操作，第一步很容易成功，第二步由于是一个CAS操作，在并发条件下有可能失败，第三步在第二步成功的条件下才执行。这里的CAS保证同一时刻，只有一个节点能成为尾节点，其他节点将失败，失败后通过for循环不断重试。</p>
 <p>所以，当有大量的线程在同时入队的时候，同一时刻，只有一个线程能完整的完成这三步，而其他线程只能完成第一步。所以就会出现尾分叉。</p>
-<p><img src="/blog/images/aqs/tailfork.png"></p>
+<p><img src="https://vqianxiao.github.io/blog/images/aqs/tailfork.png"></p>
 <p>这里第三步是在第二步成功执行之后才执行的，这就意味着，有可能即使完成了第二步，将新的节点设置成了尾节点，此时原来旧的尾节点的next值可能还是null（因为第三步还没来得及执行），所以如果此时有线程恰好从头节点开始向后遍历整个链表，则它是遍历不到新加进来的尾节点的，但是这样是不合理的，因为现在的tail已经指向了新的尾节点。</p>
 <p>另一方面，当我们完成第二步之后，第一步一定是完成了的，所以如果我们从尾节点向前遍历，已经可以遍历到所有的节点。这也是为什么AQS相关的源码中，常常会从尾节点开始逆向遍历链表。因为一个节点要能入队，则它的prev属性一定是有值的，但是它的next属性可能暂时还没有值。</p>
 <p>至于那些“分叉”的入队失败的其他节点，在下一轮的循环中，它们的prev属性会重新指向新的尾节点，继续尝试新的CAS操作，最终所有的节点都会通过自旋不断的尝试入队，直到成功为止。</p>
