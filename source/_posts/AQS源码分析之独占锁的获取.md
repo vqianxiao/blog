@@ -67,6 +67,7 @@ static final class Node {
     static final int PROPAGATE = -3;
 
     //该属性用于条件队列或者共享锁
+    Node nextWaiter;
 }
 ```
 
