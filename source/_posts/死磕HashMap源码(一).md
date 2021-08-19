@@ -318,7 +318,7 @@ static final int hash(Object key) {
 
 如果散列值算的不够分散，只取最后几位的话，分布上成等差数列的话，碰撞就会很严重。这时候扰动函数的价值就出来了。
 
-![](/blog/images/hashmap/hashcode.png)
+![](https://vqianxiao.github.io/blog/images/hashmap/hashcode.png)
 
 右移16位，正好是32bit的一半，自己的高半区和低半区做异或，就是为了混合原始哈希吗的高位和低位，以此来加大随机性。而且混合后的低位参杂了高位的部分特征，这样高位的信息也被变相保留下来。
 

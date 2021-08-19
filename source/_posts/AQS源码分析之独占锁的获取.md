@@ -82,8 +82,7 @@ private transient volatile Node tail;
 ```
 
 在AQS中的队列是一个CLH队列，它的head节点永远是一个哑节点(dummy node)，它不代表任何线程（某些情况下可以看做是代表了当前持有锁的线程），**因此head所指向的Node的thread属性永远是null**。只有从次节点往后的所有节点才代表了所有等待锁的线程。也就是说，在当前线程没有抢到锁被包装成Node扔到队列中时，即使队列是空的，它也会排在第二个，我们会在它的前面新建一个dummy节点。为了便于描述，除去head节点的队列称作等待队列，这个队列中的节点代表等待锁的线程。
-
-![](/blog/images/aqs/syncqueue.png)
+![](https://vqianxiao.github.io/blog/images/aqs/syncqueue.png)
 
 结合图片，总结下Node节点各个属性的含义：
 
@@ -349,7 +348,7 @@ acquire方法中还调用了acquireQueued()方法，还有addWaiter()方法。`N
 
 所以，当有大量的线程在同时入队的时候，同一时刻，只有一个线程能完整的完成这三步，而其他线程只能完成第一步。所以就会出现尾分叉。
 
-![](/blog/images/aqs/tailfork.png)
+![](https://vqianxiao.github.io/blog/images/aqs/tailfork.png)
 
 这里第三步是在第二步成功执行之后才执行的，这就意味着，有可能即使完成了第二步，将新的节点设置成了尾节点，此时原来旧的尾节点的next值可能还是null（因为第三步还没来得及执行），所以如果此时有线程恰好从头节点开始向后遍历整个链表，则它是遍历不到新加进来的尾节点的，但是这样是不合理的，因为现在的tail已经指向了新的尾节点。
 

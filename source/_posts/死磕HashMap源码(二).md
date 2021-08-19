@@ -116,7 +116,7 @@ if (root == null
 
 二叉查找树（Binary Search Tree 简称BST）是一颗二叉树，它的左子节点的值比父节点的值要小，右节点的值要比父节点的值大。它的高度决定了它的查找效率。在理想的情况下，二叉查找树增删改查的时间复杂度为O(logN)（其中N为节点数），最坏的情况下为O(N)。当它的高度为logN+1时，我们就说二叉查找树是平衡的。
 
-![](/blog/images/hashmap/bst.png)
+![](https://vqianxiao.github.io/blog/images/hashmap/bst.png)
 
 BST的查找
 
@@ -181,7 +181,7 @@ BST的删除
 
 3.如果删除的节点不是叶子节点，则先找到待删除节点的中序遍历的后继节点，用该后继节点的值替换待删除的节点的值，然后删除后继节点。
 
-![](/blog/images/hashmap/bstdel.png)
+![](https://vqianxiao.github.io/blog/images/hashmap/bstdel.png)
 
 BST的缺陷
 
@@ -207,7 +207,7 @@ RBTree的旋转操作
 
 旋转操作（Rotate）的目的是使节点颜色符合定义，让RBTree的高度达到平衡。Rotate分为left-rotate（左旋）和right-rotate（右旋），区分左旋和右旋的方法是：待旋转的节点从左边上升到父节点就是右旋，待旋转的节点从右边上升到父节点就是左旋。
 
-![](/blog/images/hashmap/rotateRBTree.png)
+![](https://vqianxiao.github.io/blog/images/hashmap/rotateRBTree.png)
 
 RBTree的查找操作
 
@@ -231,19 +231,19 @@ RBTree的插入操作和BST的插入方式一致，不过在插入后，可能�
 
 将父节点和叔叔节点与祖父节点的颜色互换，这样就符合了RBTree的定义。即维持了高度的平衡，修复后颜色也符合RBTree定义的第三条和第四条。下图中，操作完成后A节点变成了新的节点。如果A节点的父节点不是黑色的话，则继续做修复操作。
 
-![](/blog/images/hashmap/insertcase1.png)
+![](https://vqianxiao.github.io/blog/images/hashmap/insertcase1.png)
 
 ##### 插入操作-case2 第二种情况（叔叔节点为空，且祖父节点、父节点和新节点处于一条斜线上）
 
 将B节点进行右旋操作，并且和父节点A互换颜色，通过该修复操作BRTree的高度和颜色都符合红黑树的定义。如果B和C节点都是右节点的话，只要将操作变成左旋就可以了。
 
-![](/blog/images/hashmap/insertcase2.png)
+![](https://vqianxiao.github.io/blog/images/hashmap/insertcase2.png)
 
 ##### 插入操作-case3 第三种情况（叔叔结点为空，且祖父结点、父节点和新节点不出与一条斜线上）
 
 将C节点进行左旋，这样就将第三种情况转换成第二种情况了，然后针对第二种情况进行操作处理就可以了。case2操作做了一个右旋操作和颜色互换来达到目的。如果树的结构是下图的镜像结，则只需要将对应的左旋变成右旋，右旋变成左旋即可。
 
-![](/blog/images/hashmap/insertcase3.png)
+![](https://vqianxiao.github.io/blog/images/hashmap/insertcase3.png)
 
 **插入操作的总结**
 
@@ -281,7 +281,7 @@ case1这样转换以后就会变成后面的case2，case3，或者case4进行处
 
 之所以要做case1操作是因为兄弟节点是红色的，无法借到一个黑色节点来填补删除的黑色节点。
 
-![](/blog/images/hashmap/delcase1.png)
+![](https://vqianxiao.github.io/blog/images/hashmap/delcase1.png)
 
 ##### 删除操作-case2 （待删除的节点的兄弟节点是黑色的节点，且兄弟节点的子节点都是黑色的）
 
@@ -289,7 +289,7 @@ case2的删除操作是由于兄弟节点可以消除一个黑色节点，因为
 
 case2这种情况下之所以要将兄弟节点变红，是因为如果把兄弟节点借调过来，会导致兄弟的结构不符合RBTree的定义，这样的情况下只能是将兄弟节点也变成红色来达到颜色的平衡。当将兄弟节点也变红之后，达到了局部的平衡了，但是对于祖父节点来说是不符合定义4的（因为了个黑色的节点）。这样就需要回溯到父节点，接着进行修复操作。
 
-![](/blog/images/hashmap/delcase2.png)
+![](https://vqianxiao.github.io/blog/images/hashmap/delcase2.png)
 
 ##### 删除操作-case3（待调整的节点的兄弟节点是黑色的节点，且兄弟节点的左子节点是红色的，右节点是黑色的（兄弟节点在右边），如果兄弟节点在左边的话，就是兄弟节点的右子节点是红色的，左节点是黑色的）
 
@@ -297,7 +297,7 @@ case3的删除操作是一个中间步骤，它的目的是将左边的红色节
 
 之所以说case3是一个中间状态，是因为根据红黑树的定义来说，下图并不是平衡的，它是通过case2操作完后向上回溯出现的状态。之所以会出现case3和后面的case4的情况，是因为可以通过借调侄子节点的红色，变成黑色来符合定义4。
 
-![](/blog/images/hashmap/delcase3.png)
+![](https://vqianxiao.github.io/blog/images/hashmap/delcase3.png)
 
 ##### 删除操作-case4 （待调整的节点的兄弟节点是黑色的节点，且右子节点是红色的（兄弟节点在右边），如果兄弟节点在左边，则对应的就是左节点是红色的）
 
@@ -305,7 +305,7 @@ case4的操作是真正的节点借调操作，通过将兄弟节点以及兄弟
 
 case4这种情况的发生只有在待删除的节点的兄弟节点为黑，且子节点不全部为黑，才有可能借调到两个节点来做黑色节点使用，从而保持整棵树都符合红黑树的定义。
 
-![](/blog/images/hashmap/delcase4.png)
+![](https://vqianxiao.github.io/blog/images/hashmap/delcase4.png)
 
 **删除操作的总结**
 
