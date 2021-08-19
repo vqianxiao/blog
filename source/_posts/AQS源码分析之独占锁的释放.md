@@ -6,8 +6,8 @@ description: AQS源码分析之独占锁的释放
 tags:
 - JDK
 - JUC
-- AQS
 date: 2021/08/19 00:28:10
+
 ---
 
 上一篇讲了ReentrantLock的NonfairSync的获取锁的操作，这篇主要来看一下释放锁的操作。这里要提一下，Java的内置锁在退出临界区之后会自动释放，但是ReentrantLock这样的显式锁是需要手动释放的，所以在加锁的时候一定要记得在finally语句块中释放锁！！！
@@ -40,11 +40,11 @@ release方法定义在AQS类中，描述了释放锁的流程
 
 - tryRelease(arg)
 
-  该方法由继承AQS的子类实现，为释放锁的具体逻辑
+    该方法由继承AQS的子类实现，为释放锁的具体逻辑
 
 - unparkSuccessor(h)
 
-  唤醒后继线程
+    唤醒后继线程
 
 这里要注意一下，只要tryRelease返回true，那么后续操作不会影响最终release返回true的结果。
 

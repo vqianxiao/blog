@@ -15,32 +15,32 @@ Jdk8以前，使用的是链表去解决hash冲突的，这样就会导致一个
 
 ```java
 final void treeifyBin(Node<K,V>[] tab, int hash) {
-        int n, index; Node<K,V> e;
-        //这里还要进行判断 如果桶容量小于64还是会进行扩容
-        if (tab == null || (n = tab.length) < MIN_TREEIFY_CAPACITY)
+    int n, index; Node<K,V> e;
+    //这里还要进行判断 如果桶容量小于64还是会进行扩容
+    if (tab == null || (n = tab.length) < MIN_TREEIFY_CAPACITY)
         resize();
-        else if ((e = tab[index = (n - 1) & hash]) != null) {
+    else if ((e = tab[index = (n - 1) & hash]) != null) {
         TreeNode<K,V> hd = null, tl = null;
         do {
-        //这里只是将原来的Node替换成了TreeNode
-        TreeNode<K,V> p = replacementTreeNode(e, null);
-        if (tl == null)
-        hd = p;
-        else {
-        p.prev = tl;
-        tl.next = p;
-        }
-        tl = p;
+            //这里只是将原来的Node替换成了TreeNode
+            TreeNode<K,V> p = replacementTreeNode(e, null);
+            if (tl == null)
+                hd = p;
+            else {
+                p.prev = tl;
+                tl.next = p;
+            }
+            tl = p;
         } while ((e = e.next) != null);
         if ((tab[index] = hd) != null)
-        //这里进行红黑树的转化
-        hd.treeify(tab);
-        }
-        }
+            //这里进行红黑树的转化
+            hd.treeify(tab);
+    }
+}
 
-        TreeNode<K,V> replacementTreeNode(Node<K,V> p, Node<K,V> next) {
-        return new TreeNode<>(p.hash, p.key, p.value, next);
-        }
+TreeNode<K,V> replacementTreeNode(Node<K,V> p, Node<K,V> next) {
+    return new TreeNode<>(p.hash, p.key, p.value, next);
+}
 ```
 
 通过上面的代码可以看到，链表转红黑树其实是有两个条件的，一个是链表长度大于8，还有一个就是桶容量要大于64，否则，就只会扩容不会树化。
@@ -51,37 +51,37 @@ final void treeifyBin(Node<K,V>[] tab, int hash) {
 
 ```java
  static final class TreeNode<K,V> extends LinkedHashMap.Entry<K,V> {
-    TreeNode<K,V> parent;  // red-black tree links
-    TreeNode<K,V> left;
-    TreeNode<K,V> right;
-    TreeNode<K,V> prev;    // needed to unlink next upon deletion
-    boolean red;
-    TreeNode(int hash, K key, V val, Node<K,V> next) {
-        super(hash, key, val, next);
-    }
-}
+     TreeNode<K,V> parent;  // red-black tree links
+     TreeNode<K,V> left;
+     TreeNode<K,V> right;
+     TreeNode<K,V> prev;    // needed to unlink next upon deletion
+     boolean red;
+     TreeNode(int hash, K key, V val, Node<K,V> next) {
+         super(hash, key, val, next);
+     }
+ }
 ```
 
 上面看了链表树化的操作，然后来看下树转链表的操作。
 
 ```java
 final Node<K,V> untreeify(HashMap<K,V> map) {
-        Node<K,V> hd = null, tl = null;
-        //这里遍历树节点 然后转化成Node节点 hd是头 tl是尾 根据树节点保存的顺序恢复链表的顺序
-        for (Node<K,V> q = this; q != null; q = q.next) {
+    Node<K,V> hd = null, tl = null;
+    //这里遍历树节点 然后转化成Node节点 hd是头 tl是尾 根据树节点保存的顺序恢复链表的顺序
+    for (Node<K,V> q = this; q != null; q = q.next) {
         Node<K,V> p = map.replacementNode(q, null);
         if (tl == null)
-        hd = p;
+            hd = p;
         else
-        tl.next = p;
+            tl.next = p;
         tl = p;
-        }
-        return hd;
-        }
+    }
+    return hd;
+}
 
-        Node<K,V> replacementNode(Node<K,V> p, Node<K,V> next) {
-        return new Node<>(p.hash, p.key, p.value, next);
-        }
+Node<K,V> replacementNode(Node<K,V> p, Node<K,V> next) {
+    return new Node<>(p.hash, p.key, p.value, next);
+}
 ```
 
 我们已经知道了链表转树的条件，那么树是什么时候转成链表呢？其实可以猜个大概，因为扩容和删除节点的都会让树节点变少。
@@ -195,7 +195,7 @@ BST的主要问题，数据在插入的时候，会导致树倾斜，不同的�
 >
 > 2.根节点是黑色的
 >
-> 3.父子节点之间不能出现两个连续的红节点（红色节点的子节点只能是黑色节点）
+> 3.父子节点之间不能出现两个连续的红节点（红色节点的子节点只能是黑色节点） 
 >
 > 4.从任意节点到叶子节点的所有路径都包含相同数目的黑色节点
 >

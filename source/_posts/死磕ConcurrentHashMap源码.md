@@ -405,4 +405,3 @@ public V get(Object key) {
 - 当需要操作数组中的某个位置的节点时，会通过synchronized同步机制，锁定该位置的节点
 - 在数组扩容的时候，通过处理的步长和fwd节点来达到并发安全的目的，通过设置hash值为MOVED
 - 当把某个位置的节点赋值到新的table的时候，也通过synchronized的同步机制来保证线程安全
-
