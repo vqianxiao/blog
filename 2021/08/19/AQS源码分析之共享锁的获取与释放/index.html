@@ -1,0 +1,530 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.4.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/blog/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/blog/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/blog/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/blog/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/blog/css/main.css">
+
+
+<link rel="stylesheet" href="/blog/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"vqianxiao.github.io","root":"/blog/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+  </script>
+
+  <meta name="description" content="AQS源码分析之共享锁的获取与释放">
+<meta property="og:type" content="article">
+<meta property="og:title" content="AQS源码分析之共享锁的获取与释放">
+<meta property="og:url" content="https://vqianxiao.github.io/blog/2021/08/19/AQS%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%E4%B9%8B%E5%85%B1%E4%BA%AB%E9%94%81%E7%9A%84%E8%8E%B7%E5%8F%96%E4%B8%8E%E9%87%8A%E6%94%BE/index.html">
+<meta property="og:site_name" content="言风的博客">
+<meta property="og:description" content="AQS源码分析之共享锁的获取与释放">
+<meta property="og:locale" content="en_US">
+<meta property="article:published_time" content="2021-08-19T14:37:10.000Z">
+<meta property="article:modified_time" content="2021-08-19T14:37:10.000Z">
+<meta property="article:author" content="言风">
+<meta property="article:tag" content="JDK">
+<meta property="article:tag" content="JUC">
+<meta property="article:tag" content="AQS">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="https://vqianxiao.github.io/blog/2021/08/19/AQS%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%E4%B9%8B%E5%85%B1%E4%BA%AB%E9%94%81%E7%9A%84%E8%8E%B7%E5%8F%96%E4%B8%8E%E9%87%8A%E6%94%BE/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'en'
+  };
+</script>
+
+  <title>AQS源码分析之共享锁的获取与释放 | 言风的博客</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/blog/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">言风的博客</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+      <p class="site-subtitle" itemprop="description">世界上并没有完美的程序，但我们并不因此而沮丧，因为写程序本来就是一个不断追求完美的过程。</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/blog/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/blog/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>Archives</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
+    <link itemprop="mainEntityOfPage" href="https://vqianxiao.github.io/blog/2021/08/19/AQS%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%E4%B9%8B%E5%85%B1%E4%BA%AB%E9%94%81%E7%9A%84%E8%8E%B7%E5%8F%96%E4%B8%8E%E9%87%8A%E6%94%BE/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/blog/images/avatar.gif">
+      <meta itemprop="name" content="言风">
+      <meta itemprop="description" content="让自己更值钱，你值得更好的自己">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="言风的博客">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          AQS源码分析之共享锁的获取与释放
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2021-08-19 22:37:10" itemprop="dateCreated datePublished" datetime="2021-08-19T22:37:10+08:00">2021-08-19</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/blog/categories/JUC/" itemprop="url" rel="index"><span itemprop="name">JUC</span></a>
+                </span>
+            </span>
+
+          
+            <div class="post-description">AQS源码分析之共享锁的获取与释放</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h4 id="共享锁与独占锁的区别"><a href="#共享锁与独占锁的区别" class="headerlink" title="共享锁与独占锁的区别"></a>共享锁与独占锁的区别</h4><p>共享锁和独占锁的最大区别在于，独占锁是独占的，排他的，因此独占锁中有一个<code>exclusiveOwnerThread</code>属性，用来记录当前持有锁的线程，当独占锁已经被某个线程持有时，其他线程只能等待它被释放时，才能去竞争锁，并且同一时刻只能有一个线程竞争锁成功。</p>
+<p>但是对于共享锁而言，它是可以被多个线程同时持有。如果一个线程成功获取了共享锁，那么其他等待在这个共享锁上的线程就也可以尝试去获取锁，并且极有可能获取成功。</p>
+<table>
+<thead>
+<tr>
+<th>独占锁</th>
+<th>共享锁</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>tryAcquire(int arg)</td>
+<td>tryAcquireShared(int arg)</td>
+</tr>
+<tr>
+<td>tryAcquireNanos(int arg,long nanosTimeout)</td>
+<td>tryAcquireSharedNanos(int arg,long nanosTimeout)</td>
+</tr>
+<tr>
+<td>acquire(int arg)</td>
+<td>acquireShared(int arg)</td>
+</tr>
+<tr>
+<td>acquireQueued(final Node node,int arg)</td>
+<td>doAcquireShared(int arg)</td>
+</tr>
+<tr>
+<td>acquireinterruptibly(int arg)</td>
+<td>acquireSharedInterruptibly(int arg)</td>
+</tr>
+<tr>
+<td>doAcquireInterruptibly(int arg)</td>
+<td>doAcquireSharedInterruptibly(int arg)</td>
+</tr>
+<tr>
+<td>doAcquireNanos(int arg,long nanosTimeout)</td>
+<td>doAcquireSharedNanos(int arg,long nanosTimeout)</td>
+</tr>
+<tr>
+<td>release(int arg)</td>
+<td>releaseShared(int arg)</td>
+</tr>
+<tr>
+<td>tryRelease(int arg)</td>
+<td>tryReleaseShared(int arg)</td>
+</tr>
+<tr>
+<td>-</td>
+<td>doReleaseShared()</td>
+</tr>
+</tbody></table>
+<p>除了最后一个共享锁的doReleaseShared()方法独占锁没有对应外，其他方法，共享锁和独占锁都是一一对应的。</p>
+<p>在独占锁中，我们只有在获取独占锁的节点释放锁时，才会唤醒后继节点——这是合理的，因为独占锁只能被一个线程持有，如果它还没被释放，就没必要去唤醒它的后继节点。</p>
+<p>但是在共享模式下，当一个节点获取到了共享锁，我们在获取成功后就可以唤醒后继节点，而不需要等到释放锁的时候再去唤醒。这是因为共享锁可以被多个线程同时持有，一个锁获取到了，则后继的节点都可以直接来获取。因此，在共享锁模式下，在获取锁和释放锁结束时，都会唤醒后继节点。所以doReleaseShared()方法与unparkSuccessor(h)方法无法直接对应。</p>
+<h4 id="共享锁的获取"><a href="#共享锁的获取" class="headerlink" title="共享锁的获取"></a>共享锁的获取</h4><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">final</span> <span class="keyword">void</span> <span class="title">acquireShared</span><span class="params">(<span class="keyword">int</span> arg)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">if</span> (tryAcquireShared(arg) &lt; <span class="number">0</span>)</span><br><span class="line">        doAcquireShared(arg);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>独占锁的获取</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">final</span> <span class="keyword">void</span> <span class="title">acquire</span><span class="params">(<span class="keyword">int</span> arg)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">if</span> (!tryAcquire(arg) &amp;&amp;</span><br><span class="line">        acquireQueued(addWaiter(Node.EXCLUSIVE), arg))</span><br><span class="line">        selfInterrupt();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>可以看到共享锁tryAcquireShared()返回的是一个int类型而独占锁tryAcquire()返回的是boolean类型的。</p>
+<p>tryAcquireShared返回值：</p>
+<ul>
+<li>如果该值小于0，表示当前线程获取共享锁失败</li>
+<li>如果该值大于0，表示当前线程获取共享锁成功，并且接下来其他线程获取共享锁的行为很可能成功</li>
+<li>如果该值等于0，表示当前线程获取共享锁成功，但是接下来其他线程尝试获取共享锁的行为会失败</li>
+</ul>
+<p>因此只要返回值大于0，就表示获取共享锁成功。</p>
+<p>tryAcquireShared由子类实现，先不看。</p>
+<p>看下doAcquireShared方法，对应独占锁的acquireQueued。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">private</span> <span class="keyword">void</span> <span class="title">doAcquireShared</span><span class="params">(<span class="keyword">int</span> arg)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">final</span> Node node = addWaiter(Node.SHARED);</span><br><span class="line">    <span class="comment">//独占锁这里是</span></span><br><span class="line">    <span class="comment">//addWaiter(Node.EXCLUSIVE)</span></span><br><span class="line">    <span class="keyword">boolean</span> failed = <span class="keyword">true</span>;</span><br><span class="line">    <span class="keyword">try</span> &#123;</span><br><span class="line">        <span class="keyword">boolean</span> interrupted = <span class="keyword">false</span>;</span><br><span class="line">        <span class="keyword">for</span> (;;) &#123;</span><br><span class="line">            <span class="keyword">final</span> Node p = node.predecessor();</span><br><span class="line">            <span class="keyword">if</span> (p == head) &#123;</span><br><span class="line">                <span class="keyword">int</span> r = tryAcquireShared(arg);</span><br><span class="line">                <span class="keyword">if</span> (r &gt;= <span class="number">0</span>) &#123;</span><br><span class="line">                    setHeadAndPropagate(node, r);</span><br><span class="line">                    <span class="comment">//独占锁这里是</span></span><br><span class="line">                    <span class="comment">//setHead(node)</span></span><br><span class="line">                    p.next = <span class="keyword">null</span>; <span class="comment">// help GC</span></span><br><span class="line">                    <span class="keyword">if</span> (interrupted)</span><br><span class="line">                        selfInterrupt();</span><br><span class="line">                    failed = <span class="keyword">false</span>;</span><br><span class="line">                    <span class="keyword">return</span>;</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line">            <span class="keyword">if</span> (shouldParkAfterFailedAcquire(p, node) &amp;&amp;</span><br><span class="line">                parkAndCheckInterrupt())</span><br><span class="line">                interrupted = <span class="keyword">true</span>;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125; <span class="keyword">finally</span> &#123;</span><br><span class="line">        <span class="keyword">if</span> (failed)</span><br><span class="line">            cancelAcquire(node);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>我在共享锁和独占锁不同的地方加了注释，可以看到，第一点不同是独占锁的acquireQueued调用的是addWaiter(Node.EXCLUSIVE)，而共享锁调用的是addWaiter(Node.SHARED)，表明该节点处于共享模式，两种模式的定义为：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">static</span> <span class="keyword">final</span> Node SHARED = <span class="keyword">new</span> Node();</span><br><span class="line"><span class="keyword">static</span> <span class="keyword">final</span> Node EXCLUSIVE = <span class="keyword">null</span>;</span><br></pre></td></tr></table></figure>
+
+<p>这个模式被赋值给了节点的nextWaiter属性：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">Node(Thread thread, Node mode) &#123;     <span class="comment">// Used by addWaiter</span></span><br><span class="line">    <span class="keyword">this</span>.nextWaiter = mode;</span><br><span class="line">    <span class="keyword">this</span>.thread = thread;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>我们知道，在条件队列中，nextWaiter是指向条件队列中的下一个节点的，它将条件队列中的节点穿起来，构成了单链表。但是在sync queue队列中，我们只用prev，next属性来串联节点，这样就形成了双向链表，nextWaiter属性在这里只起到一个标记作用，不会串联节点。Node SHARED = new Node() 这个节点并不属于sync queue，不代表任何线程，只是作为判断节点是否处于共享模式的依据（Node中isShared方法）：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">final</span> <span class="keyword">boolean</span> <span class="title">isShared</span><span class="params">()</span> </span>&#123;</span><br><span class="line">     <span class="keyword">return</span> nextWaiter == SHARED;</span><br><span class="line"> &#125;</span><br></pre></td></tr></table></figure>
+
+<p>第二点不同在于获取锁成功后的行为，对于独占锁而言，是直接调用了setHead(node)方法，而共享锁调用的是setHeadAndPropagate(node,r)：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">private</span> <span class="keyword">void</span> <span class="title">setHeadAndPropagate</span><span class="params">(Node node, <span class="keyword">int</span> propagate)</span> </span>&#123;</span><br><span class="line">    Node h = head; <span class="comment">// Record old head for check below</span></span><br><span class="line">    setHead(node);</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (propagate &gt; <span class="number">0</span> || h == <span class="keyword">null</span> || h.waitStatus &lt; <span class="number">0</span> ||</span><br><span class="line">        (h = head) == <span class="keyword">null</span> || h.waitStatus &lt; <span class="number">0</span>) &#123;</span><br><span class="line">        Node s = node.next;</span><br><span class="line">        <span class="keyword">if</span> (s == <span class="keyword">null</span> || s.isShared())</span><br><span class="line">            doReleaseShared();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>在这个方法内部，不进调用了setHead(node)方法，还在一定条件下调用了doReleaseShared()来唤醒后继的节点。这是因为在共享锁模式下，锁可以被多个线程所共同持有，既然当前线程已经拿到了共享锁了，那么就可以直接通知后继节点来拿锁，而不必等到锁被释放的时候再通知。这个doReleaseShared()方法在分析释放锁的时候再看。</p>
+<h4 id="共享锁的释放"><a href="#共享锁的释放" class="headerlink" title="共享锁的释放"></a>共享锁的释放</h4><p>共享锁释放的方法是releaseShared(int arg) ：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">final</span> <span class="keyword">boolean</span> <span class="title">releaseShared</span><span class="params">(<span class="keyword">int</span> arg)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">if</span> (tryReleaseShared(arg)) &#123;</span><br><span class="line">        doReleaseShared();</span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">true</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> <span class="keyword">false</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>独占锁的释放的方法release(int arg)：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">final</span> <span class="keyword">boolean</span> <span class="title">release</span><span class="params">(<span class="keyword">int</span> arg)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">if</span> (tryRelease(arg)) &#123;</span><br><span class="line">        Node h = head;</span><br><span class="line">        <span class="keyword">if</span> (h != <span class="keyword">null</span> &amp;&amp; h.waitStatus != <span class="number">0</span>)</span><br><span class="line">            unparkSuccessor(h);</span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">true</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> <span class="keyword">false</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>在独占锁模式下，由于头节点就是独占锁的节点，在它释放独占锁后，如果发现自己的waitStatus不为0，则它将唤醒它的后继节点。</p>
+<p>在共享模式下，头节点就是持有共享锁的节点，在它释放共享锁后，它也应该唤醒它的后继节点，但是值得注意的是，我们在之前的setHeadAndPropagate方法中可能已经调用过该方法了，也就是说它可能被同一个头节点调用两次，也有可能在我们从releaseShared方法中调用它时，当前的头节点已经易主了。</p>
+<p>看下doReleaseShared这个方法：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">private</span> <span class="keyword">void</span> <span class="title">doReleaseShared</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    <span class="keyword">for</span> (;;) &#123;</span><br><span class="line">        Node h = head;</span><br><span class="line">        <span class="keyword">if</span> (h != <span class="keyword">null</span> &amp;&amp; h != tail) &#123;</span><br><span class="line">            <span class="keyword">int</span> ws = h.waitStatus;</span><br><span class="line">            <span class="keyword">if</span> (ws == Node.SIGNAL) &#123;</span><br><span class="line">                <span class="keyword">if</span> (!compareAndSetWaitStatus(h, Node.SIGNAL, <span class="number">0</span>))</span><br><span class="line">                    <span class="keyword">continue</span>;            <span class="comment">// loop to recheck cases</span></span><br><span class="line">                unparkSuccessor(h);</span><br><span class="line">            &#125;</span><br><span class="line">            <span class="keyword">else</span> <span class="keyword">if</span> (ws == <span class="number">0</span> &amp;&amp;</span><br><span class="line">                     !compareAndSetWaitStatus(h, <span class="number">0</span>, Node.PROPAGATE))</span><br><span class="line">                <span class="keyword">continue</span>;                <span class="comment">// loop on failed CAS</span></span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">if</span> (h == head)                   <span class="comment">// loop if head changed</span></span><br><span class="line">            <span class="keyword">break</span>;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>这个方法比较难理解。我们先从哪里调这个方法，谁调用这个方法，调用这个方法的目的是什么这些方面去分析。</p>
+<p><strong>1.该方法有几处调用？</strong></p>
+<p>这个方法一共有两处调用，一处是acquireShared末尾，当线程成功获取到共享锁后，在一定条件下调用该方法，一处是在releaseShared方法中，当线程释放共享锁的时候调用。</p>
+<p><strong>2.调用该方法的线程是谁？</strong></p>
+<p>在独占锁中，只有获的了锁的线程才能调用release释放锁，因此调用unparkSuccessor(h)唤醒后继节点的必然是持有锁的线程，该线程可看做是当前的头节点（虽然setHead方法中已经将头节点的thread属性设为null了，但是这个头节点曾经代表的就是这个线程）</p>
+<p>在共享锁中，持有共享锁的线程可以是多个，这些线程都可以调用releaseShared方法释放锁。而这些线程想要获得共享锁，则他们必然曾经成为过头节点，或者就是现在的头节点。因此，如果在releaseShared方法中调用的doReleaseShared，可能此时调用方法的线程已经不是头节点所代表的线程了，头节点可能已经被易主好几次了。</p>
+<p><strong>3.调用该方法的目的是什么？</strong></p>
+<p>这个方法的作用是在当前共享锁是可获取状态时，唤醒head节点的下一个节点。这一点看起来和独占锁似乎一样，但是它们有一个重要的差别是，在共享锁中，当头节点发生变化时，会回到循环中再立即唤醒head节点的下一个节点的。也就是说，在当前节点完成唤醒后继节点的任务之后将要退出时，如果发现被唤醒节点的后继节点已经成为新的头节点，则会立即出发唤醒head节点的下一个节点的操作，直到在这个循环中头节点没有发生变化。</p>
+<p><strong>4.退出该方法的条件是什么？</strong></p>
+<p>该方法是一个自旋操作，只有满足h == head条件后的break可以退出这个方法。也就是在这次循环中，头节点没有发生变化。</p>
+<p>假设队列中依次排列有</p>
+<blockquote>
+<p>dummy node -&gt;A -&gt; B -&gt; C -&gt; D</p>
+</blockquote>
+<p>现在假设A拿到了共享锁，则它将成为新的dummy node</p>
+<blockquote>
+<p>dummy node(A) -&gt; B -&gt; C-&gt; D</p>
+</blockquote>
+<p>此时A线程会调用doReleaseShared，我们写作doReleaseShared[A]，在该方法中将继续唤醒后继的节点B，B很快获得了共享锁，成为新的头节点</p>
+<blockquote>
+<p>dummy node(B) -&gt; C -&gt; D</p>
+</blockquote>
+<p>此时B也会调用doReleaseShared，我们写作doReleaseShared[B]，该方法将唤醒后继的节点C，但是在doReleaseShared[B]调用的时候，doReleaseShared[A]还没运行结束，当它运行到if(h == head)时，发现头节点已经变了，所以它将继续回到for循环中，doReleaseShared[B]运行到判断的时候，也进入到for循环中。</p>
+<p>这时这里就形成了一个“调用风暴”，大量线程在同时执行doReleaseShared，这将加快后继节点的唤醒速度，提升执行效率。同时内部的CAS又保证了多个线程唤醒同一个节点时，只有一个线程可以成功。</p>
+<p>如果doReleaseShared[A]执行结束时，节点B还没有成为新的头节点，那么doReleaseShared[A]就会结束退出，这样也不会影响A唤醒了B线程的结果，最终等待共享锁的线程都将执行。</p>
+<p>这里的“调用风暴”其实是一个优化操作，因为我们在执行到该方法末尾的时候，unparkSuccessor基本上已经被调用过了，然后因为是共享锁，所以被唤醒的后继节点也极有可能已经获取到了共享锁，成为新的head节点，当它成为head节点后，它可能还是要在setHeadAndPropagate方法中调用doReleaseShared唤醒它的后继节点。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> (h != <span class="keyword">null</span> &amp;&amp; h != tail) &#123;</span><br><span class="line">            <span class="keyword">int</span> ws = h.waitStatus;</span><br><span class="line">            <span class="keyword">if</span> (ws == Node.SIGNAL) &#123;</span><br><span class="line">                <span class="keyword">if</span> (!compareAndSetWaitStatus(h, Node.SIGNAL, <span class="number">0</span>))</span><br><span class="line">                    <span class="keyword">continue</span>;            <span class="comment">// loop to recheck cases</span></span><br><span class="line">                unparkSuccessor(h); </span><br><span class="line">            &#125;</span><br><span class="line">            <span class="keyword">else</span> <span class="keyword">if</span> (ws == <span class="number">0</span> &amp;&amp;</span><br><span class="line">                     !compareAndSetWaitStatus(h, <span class="number">0</span>, Node.PROPAGATE))</span><br><span class="line">                <span class="keyword">continue</span>;                <span class="comment">// loop on failed CAS</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>第一个if比较好理解，如果当前头节点ws值为SIGNAL，则说明后继节点需要被唤醒，这里使用CAS先改ws状态改为0，并且让成功的那个线程执行unparkSuccessor，这样也保证了unparkSuccessor只会被执行一次。</p>
+<p>这个第二个if。是<strong>当前队列最后一个节点变成了头节点</strong>，为什么是这种情况呢？因为每次新加入一个节点，都会把自己的前驱节点的waitStatus改为SIGNAL。</p>
+<p>这个if描述了一个极其严苛且短暂的状态：</p>
+<p>1.首先，队列里有至少两个节点 可以看最外层的判断条件 if(h != null &amp;&amp; h != tail)</p>
+<p>2.要执行到else if语句，说明头节点是刚刚成为头节点的，它的waitStatus还是0，尾节点是在这之后加进来的，它需要执行shouldParkAfterFailedAcquire，将它的前驱节点（头节点）的waitStatus改为SIGNAL，但是目前这个修改操作还没有来得及执行。这种情况使得可以进入第二个if的前半段 ws == 0</p>
+<p>3.紧接着要满足!compareAndSetWaitStatus(h, 0, Node.PROPAGATE)这一条件，说明此时头节点的waitStatus已经不是0了，说明之前那个没有来得及执行的在shouldParkAfterFailedAcquire将前驱节点的waitStatus值修改为SIGNAL的操作现在执行完了</p>
+<p>所以第二个if的&amp;&amp;连接了两个不一致的状态，分别对应了shouldParkAfterFailedAcquire的<code>compareAndSetWaitStatus(pred, ws, Node.SIGNAL)</code>执行成功前和执行成功后，因为doReleaseShared和shouldParkAfterFailedAcquire是可以并发执行的，所以这一条件是有可能满足的，只是满足条件非常严苛，可能只是一瞬间的事。</p>
+<h4 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h4><ul>
+<li>共享锁的调用框架和独占锁很相似，它们最大的不同在于获取锁的逻辑——共享锁可以被多个线程同时持有，而独占锁同一时刻只能被一个线程持有</li>
+<li>由于共享锁同一时刻可以被多个线程持有，因此当头节点获取到共享锁时，可以立即唤醒后继节点来竞争锁，而不必等到释放锁的时候。因此共享锁触发唤醒后继节点的行为可能有两处，一处在当前节点成功获得共享锁后，一处在当前节点释放共享锁后。</li>
+</ul>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/blog/tags/JDK/" rel="tag"># JDK</a>
+              <a href="/blog/tags/JUC/" rel="tag"># JUC</a>
+              <a href="/blog/tags/AQS/" rel="tag"># AQS</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/blog/2021/08/18/AQS%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%E4%B9%8B%E7%8B%AC%E5%8D%A0%E9%94%81%E7%9A%84%E9%87%8A%E6%94%BE/" rel="prev" title="AQS源码分析之独占锁的释放">
+      <i class="fa fa-chevron-left"></i> AQS源码分析之独占锁的释放
+    </a></div>
+      <div class="post-nav-item"></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%85%B1%E4%BA%AB%E9%94%81%E4%B8%8E%E7%8B%AC%E5%8D%A0%E9%94%81%E7%9A%84%E5%8C%BA%E5%88%AB"><span class="nav-number">1.</span> <span class="nav-text">共享锁与独占锁的区别</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%85%B1%E4%BA%AB%E9%94%81%E7%9A%84%E8%8E%B7%E5%8F%96"><span class="nav-number">2.</span> <span class="nav-text">共享锁的获取</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%85%B1%E4%BA%AB%E9%94%81%E7%9A%84%E9%87%8A%E6%94%BE"><span class="nav-number">3.</span> <span class="nav-text">共享锁的释放</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E6%80%BB%E7%BB%93"><span class="nav-number">4.</span> <span class="nav-text">总结</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">言风</p>
+  <div class="site-description" itemprop="description">让自己更值钱，你值得更好的自己</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/blog/archives/">
+        
+          <span class="site-state-item-count">35</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+        <span class="site-state-item-count">4</span>
+        <span class="site-state-item-name">categories</span>
+      </div>
+      <div class="site-state-item site-state-tags">
+        <span class="site-state-item-count">5</span>
+        <span class="site-state-item-name">tags</span>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">言风</span>
+</div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://muse.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Muse</a>
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/blog/lib/anime.min.js"></script>
+  <script src="/blog/lib/velocity/velocity.min.js"></script>
+  <script src="/blog/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/blog/js/utils.js"></script>
+
+<script src="/blog/js/motion.js"></script>
+
+
+<script src="/blog/js/schemes/muse.js"></script>
+
+
+<script src="/blog/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>
