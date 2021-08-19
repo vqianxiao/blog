@@ -1,8 +1,8 @@
 ---
 layout:    post
-title:     死磕ReentrantLock源码(二)
+title:     AQS源码分析之独占锁的释放
 category:  JUC
-description: 死磕ReentrantLock源码(二)
+description: AQS源码分析之独占锁的释放
 tags:
 - JDK
 - JUC
