@@ -1,0 +1,573 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.4.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/blog/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/blog/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/blog/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/blog/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/blog/css/main.css">
+
+
+<link rel="stylesheet" href="/blog/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"vqianxiao.github.io","root":"/blog/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+  </script>
+
+  <meta name="description" content="AQS源码分析之Condition接口的实现">
+<meta property="og:type" content="article">
+<meta property="og:title" content="AQS源码分析之Condition接口的实现">
+<meta property="og:url" content="https://vqianxiao.github.io/blog/2021/09/02/AQS%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%E4%B9%8BCondition%E6%8E%A5%E5%8F%A3%E7%9A%84%E5%AE%9E%E7%8E%B0/index.html">
+<meta property="og:site_name" content="言风的博客">
+<meta property="og:description" content="AQS源码分析之Condition接口的实现">
+<meta property="og:locale" content="en_US">
+<meta property="article:published_time" content="2021-09-02T07:05:10.000Z">
+<meta property="article:modified_time" content="2021-09-02T07:05:10.000Z">
+<meta property="article:author" content="言风">
+<meta property="article:tag" content="JDK">
+<meta property="article:tag" content="JUC">
+<meta property="article:tag" content="AQS">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="https://vqianxiao.github.io/blog/2021/09/02/AQS%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%E4%B9%8BCondition%E6%8E%A5%E5%8F%A3%E7%9A%84%E5%AE%9E%E7%8E%B0/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'en'
+  };
+</script>
+
+  <title>AQS源码分析之Condition接口的实现 | 言风的博客</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/blog/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">言风的博客</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+      <p class="site-subtitle" itemprop="description">世界上并没有完美的程序，但我们并不因此而沮丧，因为写程序本来就是一个不断追求完美的过程。</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/blog/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/blog/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>Archives</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
+    <link itemprop="mainEntityOfPage" href="https://vqianxiao.github.io/blog/2021/09/02/AQS%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%E4%B9%8BCondition%E6%8E%A5%E5%8F%A3%E7%9A%84%E5%AE%9E%E7%8E%B0/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/blog/images/avatar.gif">
+      <meta itemprop="name" content="言风">
+      <meta itemprop="description" content="让自己更值钱，你值得更好的自己">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="言风的博客">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          AQS源码分析之Condition接口的实现
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2021-09-02 15:05:10" itemprop="dateCreated datePublished" datetime="2021-09-02T15:05:10+08:00">2021-09-02</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/blog/categories/JUC/" itemprop="url" rel="index"><span itemprop="name">JUC</span></a>
+                </span>
+            </span>
+
+          
+            <div class="post-description">AQS源码分析之Condition接口的实现</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p>Condition接口是用来做控制线程的执行流程的。类似于监视器锁的wait/notify机制。可以先看下Condition提供了哪些方法。Condition接口一共定义了7个方法，根据方法名方法的用途我们也能猜个大概。</p>
+<table>
+<thead>
+<tr>
+<th>Object</th>
+<th>Condition</th>
+<th>区别</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>void wait()</td>
+<td>void await()</td>
+<td></td>
+</tr>
+<tr>
+<td>void wait(long timeout)</td>
+<td>long awaitNanos(long nanosTimeout)</td>
+<td>时间单位不同，返回值</td>
+</tr>
+<tr>
+<td>void wait(long timeout,int nanos)</td>
+<td>boolean await(long time,TimeUnit unit)</td>
+<td>时间单位同，参数类型，返回值</td>
+</tr>
+<tr>
+<td>void notify()</td>
+<td>void signal()</td>
+<td></td>
+</tr>
+<tr>
+<td>void notifyAll()</td>
+<td>void signal</td>
+<td></td>
+</tr>
+<tr>
+<td>-</td>
+<td>void awaitUninterruptibly()</td>
+<td>Condition独有</td>
+</tr>
+<tr>
+<td>-</td>
+<td>boolean awaitUntil(Date deadline)</td>
+<td>Condition独有</td>
+</tr>
+</tbody></table>
+<p>类比下wait/notify机制：</p>
+<p>1.调用wait方法的线程必须是已经进入了同步代码块的线程，也就是获得了监视器锁，那么调用await方法的线程也必须是获得了lock锁。</p>
+<p>2.调用wait方法的线程会释放已获得的监视器锁，进入当前监视器锁的等待队列（wait set）中，调用await方法的线程也会释放已经获得的lock锁，进入到当前Condition对应的条件队列中。</p>
+<p>3.调用监视器锁的notify方法会唤醒等待在该监视器锁上的线程，这些线程将开始参与锁竞争，并在获得锁后，从wait方法处恢复执行。调用Condition的signal方法会唤醒对应条件队列中的线程，这些线程将开始参与锁竞争，并在获得锁后，从await方法处开始恢复执行。</p>
+<p>先来看下Condition怎么使用，这里看一下官方给的例子：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">BoundedBuffer</span> </span>&#123;</span><br><span class="line">    <span class="keyword">final</span> Lock lock = <span class="keyword">new</span> ReentrantLock();</span><br><span class="line">    <span class="keyword">final</span> Condition notFull = lock.newCondition();</span><br><span class="line">    <span class="keyword">final</span> Condition notEmpty = lock.newCondition();</span><br><span class="line"></span><br><span class="line">    <span class="keyword">final</span> Object[] items = <span class="keyword">new</span> Object[<span class="number">100</span>];</span><br><span class="line">    <span class="keyword">int</span> putptr, takeptr, count;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 生产者方法，往数组里面写数据</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">put</span><span class="params">(Object x)</span> <span class="keyword">throws</span> InterruptedException </span>&#123;</span><br><span class="line">        lock.lock();</span><br><span class="line">        <span class="keyword">try</span> &#123;</span><br><span class="line">            <span class="keyword">while</span> (count == items.length)</span><br><span class="line">                notFull.await(); <span class="comment">//数组已满，没有空间时，挂起等待，直到数组“非满”（notFull）</span></span><br><span class="line">            items[putptr] = x;</span><br><span class="line">            <span class="keyword">if</span> (++putptr == items.length) putptr = <span class="number">0</span>;</span><br><span class="line">            ++count;</span><br><span class="line">            notEmpty.signal(); </span><br><span class="line">        &#125; <span class="keyword">finally</span> &#123;</span><br><span class="line">            lock.unlock();</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 消费者方法，从数组里面拿数据</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> Object <span class="title">take</span><span class="params">()</span> <span class="keyword">throws</span> InterruptedException </span>&#123;</span><br><span class="line">        lock.lock();</span><br><span class="line">        <span class="keyword">try</span> &#123;</span><br><span class="line">            <span class="keyword">while</span> (count == <span class="number">0</span>)</span><br><span class="line">                notEmpty.await(); <span class="comment">// 数组是空的，没有数据可拿时，挂起等待，直到数组非空（notEmpty）</span></span><br><span class="line">            Object x = items[takeptr];</span><br><span class="line">            <span class="keyword">if</span> (++takeptr == items.length) takeptr = <span class="number">0</span>;</span><br><span class="line">            --count;</span><br><span class="line">            notFull.signal();</span><br><span class="line">            <span class="keyword">return</span> x;</span><br><span class="line">        &#125; <span class="keyword">finally</span> &#123;</span><br><span class="line">            lock.unlock();</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>这个例子是一个生产者-消费者模型，在同一个lock上，有两个条件队列，当数组满的时候，put方法在notFull条件上等待，直到数组不满的时候。当数组为空时，take方法在notEmpty条件上等待，直到数组不为空的时候。</p>
+<p>我们知道，在AQS中所有等待锁的线程会被包装成Node扔到一个同步队列中去，那么因为条件不满足继续执行下去而调用await方法的线程应该也是放到一个队列中去了，而一个lock中又可以有多个Condition，所以我们猜测应该每个Condition内部维护一个条件队列，这样就可以互相不影响了。</p>
+<p>但是和等待锁的同步队列不同的是，同步队列是一个双向链表，nextWaiter并没有用来串联链表，而是用了prev，next属性。条件队列是一个单向链表，用nextWaiter来串联链表。</p>
+<h3 id="Condition实现"><a href="#Condition实现" class="headerlink" title="Condition实现"></a>Condition实现</h3><p>AQS中Condition的主要实现是ConditionObject，在ConditionObject中有两个重要的属性，一个是firstWaiter，一个是lastWaiter。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/** First node of condition queue. */</span></span><br><span class="line"><span class="keyword">private</span> <span class="keyword">transient</span> Node firstWaiter;</span><br><span class="line"><span class="comment">/** Last node of condition queue. */</span></span><br><span class="line"><span class="keyword">private</span> <span class="keyword">transient</span> Node lastWaiter;</span><br></pre></td></tr></table></figure>
+
+<p>然后我们看await()方法。</p>
+<h5 id="await"><a href="#await" class="headerlink" title="await()"></a>await()</h5><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">final</span> <span class="keyword">void</span> <span class="title">await</span><span class="params">()</span> <span class="keyword">throws</span> InterruptedException </span>&#123;</span><br><span class="line">    <span class="comment">//如果调用await()前已经被中断，则直接抛出InterruptedException</span></span><br><span class="line">    <span class="keyword">if</span> (Thread.interrupted())</span><br><span class="line">        <span class="keyword">throw</span> <span class="keyword">new</span> InterruptedException();</span><br><span class="line">    <span class="comment">//将当前线程加到等待队列中</span></span><br><span class="line">    Node node = addConditionWaiter();</span><br><span class="line">    <span class="comment">//释放当前线程所占用的锁</span></span><br><span class="line">    <span class="keyword">int</span> savedState = fullyRelease(node);</span><br><span class="line">    <span class="keyword">int</span> interruptMode = <span class="number">0</span>;</span><br><span class="line">    <span class="comment">//如果当前node不在同步队列中，则直接将线程挂起</span></span><br><span class="line">    <span class="keyword">while</span> (!isOnSyncQueue(node)) &#123;</span><br><span class="line">        LockSupport.park(<span class="keyword">this</span>);</span><br><span class="line">        <span class="comment">//检查线程被唤醒原因，是signal还是中断</span></span><br><span class="line">        <span class="keyword">if</span> ((interruptMode = checkInterruptWhileWaiting(node)) != <span class="number">0</span>)</span><br><span class="line">            <span class="keyword">break</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">//尝试去获取锁 然后执行后续逻辑</span></span><br><span class="line">    <span class="keyword">if</span> (acquireQueued(node, savedState) &amp;&amp; interruptMode != THROW_IE)</span><br><span class="line">        interruptMode = REINTERRUPT;</span><br><span class="line">    <span class="keyword">if</span> (node.nextWaiter != <span class="keyword">null</span>) <span class="comment">// clean up if cancelled</span></span><br><span class="line">        unlinkCancelledWaiters();</span><br><span class="line">    <span class="keyword">if</span> (interruptMode != <span class="number">0</span>)</span><br><span class="line">        reportInterruptAfterWait(interruptMode);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>源码中对一些代码也进行了注释，流程基本上就是这样。关于被唤醒之后的分析，我们后面再来看。</p>
+<h5 id="addConditionWaiter"><a href="#addConditionWaiter" class="headerlink" title="addConditionWaiter"></a>addConditionWaiter</h5><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">private</span> Node <span class="title">addConditionWaiter</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    Node t = lastWaiter;</span><br><span class="line">    <span class="comment">// If lastWaiter is cancelled, clean out.</span></span><br><span class="line">    <span class="comment">//如果尾节点被cancel了，则先遍历整个链表，清除所有被cancel的节点</span></span><br><span class="line">    <span class="keyword">if</span> (t != <span class="keyword">null</span> &amp;&amp; t.waitStatus != Node.CONDITION) &#123;</span><br><span class="line">        unlinkCancelledWaiters();</span><br><span class="line">        t = lastWaiter;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">//当前节点入条件队列</span></span><br><span class="line">    Node node = <span class="keyword">new</span> Node(Thread.currentThread(), Node.CONDITION);</span><br><span class="line">    <span class="keyword">if</span> (t == <span class="keyword">null</span>)</span><br><span class="line">        firstWaiter = node;</span><br><span class="line">    <span class="keyword">else</span></span><br><span class="line">        t.nextWaiter = node;</span><br><span class="line">    lastWaiter = node;</span><br><span class="line">    <span class="keyword">return</span> node;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>这里看到代码中没有任何加锁操作，那么这个会存在并发问题吗？不存在，因为能进入到await方法中的线程一定是已经获得了锁的，而能获得锁的线程只有一个，也就不会存在并发，所以不需要加锁操作。在这个方法中，我们就是简单的将当前线程封装成Node加到条件队列的末尾。</p>
+<p>这里面有三个点需要注意一下：</p>
+<ol>
+<li>节点加入sync queue是waitStatus的值是0，但节点加入condition queue是waitStatus的值为Node.CONDITION（-2）。</li>
+<li>sync queue的头节点是虚节点，如果队列为空，会先创建一个dummy节点，再创建一个代表当前节点的Node添加在dummy节点的后面。condition queue没有dummy节点，初始化时，直接将firstWaiter和lastWaiter直接指向新建的节点。</li>
+<li>sync queue是一个双向队列，在节点入队后，需要同时修改当前节点的前驱和后继。在condition queue中，节点入队，只需要修改前驱节点的nextWaiter，也就是说条件队列是当单项队列使用的。</li>
+</ol>
+<p>如果入队的时候，发现尾节点已经取消等待了，那么就不应该把新的node放到取消的尾节点后面，此时调用unlinkCancelledWaiters来剔除那些已经取消等待的线程：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">private</span> <span class="keyword">void</span> <span class="title">unlinkCancelledWaiters</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    Node t = firstWaiter;</span><br><span class="line">    Node trail = <span class="keyword">null</span>;</span><br><span class="line">    <span class="keyword">while</span> (t != <span class="keyword">null</span>) &#123;</span><br><span class="line">        Node next = t.nextWaiter;</span><br><span class="line">        <span class="keyword">if</span> (t.waitStatus != Node.CONDITION) &#123;</span><br><span class="line">            t.nextWaiter = <span class="keyword">null</span>;</span><br><span class="line">            <span class="keyword">if</span> (trail == <span class="keyword">null</span>)</span><br><span class="line">                firstWaiter = next;</span><br><span class="line">            <span class="keyword">else</span></span><br><span class="line">                trail.nextWaiter = next;</span><br><span class="line">            <span class="keyword">if</span> (next == <span class="keyword">null</span>)</span><br><span class="line">                lastWaiter = trail;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">else</span></span><br><span class="line">            trail = t;</span><br><span class="line">        t = next;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>这个方法就是从头部开始遍历队列，剔除waitStatus不是Node.CONDITION的节点。</p>
+<h5 id="fullyRelease"><a href="#fullyRelease" class="headerlink" title="fullyRelease"></a>fullyRelease</h5><p>节点被成功添加到队列末尾后，将调用fullyRelease来释放当前线程所占用的锁：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">final</span> <span class="keyword">int</span> <span class="title">fullyRelease</span><span class="params">(Node node)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">boolean</span> failed = <span class="keyword">true</span>;</span><br><span class="line">    <span class="keyword">try</span> &#123;</span><br><span class="line">        <span class="keyword">int</span> savedState = getState();</span><br><span class="line">        <span class="keyword">if</span> (release(savedState)) &#123;</span><br><span class="line">            failed = <span class="keyword">false</span>;</span><br><span class="line">            <span class="keyword">return</span> savedState;</span><br><span class="line">        &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">            <span class="keyword">throw</span> <span class="keyword">new</span> IllegalMonitorStateException();</span><br><span class="line">        &#125;</span><br><span class="line">    &#125; <span class="keyword">finally</span> &#123;</span><br><span class="line">        <span class="keyword">if</span> (failed)</span><br><span class="line">            node.waitStatus = Node.CANCELLED;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>这个方法中，通过release方法去释放锁。但是这里需要注意，这里对于可重入锁而言，是一次性释放所有的锁，因为getState()拿到的是重入的次数。然后这里还需要注意，这里会抛出IllegalMonitorStateException异常，这是因为当前线程可能不是持有锁的线程，前面说执行await方法的时候一定是拿到锁的线程才能调用await方法。但是我们并没有去判断当前拿到锁的线程是不是exclusiveOwnerThread这个线程。这个检测其实是在AQS子类实现tryRelease方法来做的。ReentrantLock对tryRelease方法的实现如下：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">protected</span> <span class="keyword">final</span> <span class="keyword">boolean</span> <span class="title">tryRelease</span><span class="params">(<span class="keyword">int</span> releases)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">int</span> c = getState() - releases;</span><br><span class="line">    <span class="keyword">if</span> (Thread.currentThread() != getExclusiveOwnerThread())</span><br><span class="line">        <span class="keyword">throw</span> <span class="keyword">new</span> IllegalMonitorStateException();</span><br><span class="line">    <span class="keyword">boolean</span> free = <span class="keyword">false</span>;</span><br><span class="line">    <span class="keyword">if</span> (c == <span class="number">0</span>) &#123;</span><br><span class="line">        free = <span class="keyword">true</span>;</span><br><span class="line">        setExclusiveOwnerThread(<span class="keyword">null</span>);</span><br><span class="line">    &#125;</span><br><span class="line">    setState(c);</span><br><span class="line">    <span class="keyword">return</span> free;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>当发现当前线程不是持有锁的线程时，就会进入fullyRelease的finally语句块中，将当前node的waitStatus改为Node.CANCELLED，这也是为什么添加新节点的时候，都会检查尾节点是否已经被取消了。因为会抛出IllegalMonitorStateException异常。</p>
+<p>在当前线程的锁被释放后，就可以调用LockSupport.park(this)把当前线程挂起，等待signal了。但是源码中还调用了isOnSyncQueue来检查当前线程不在sync queue中。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">final</span> <span class="keyword">boolean</span> <span class="title">isOnSyncQueue</span><span class="params">(Node node)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">if</span> (node.waitStatus == Node.CONDITION || node.prev == <span class="keyword">null</span>)</span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">false</span>;</span><br><span class="line">    <span class="keyword">if</span> (node.next != <span class="keyword">null</span>) <span class="comment">// If has successor, it must be on queue</span></span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">true</span>;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">return</span> findNodeFromTail(node);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">private</span> <span class="keyword">boolean</span> <span class="title">findNodeFromTail</span><span class="params">(Node node)</span> </span>&#123;</span><br><span class="line">    Node t = tail;</span><br><span class="line">    <span class="keyword">for</span> (;;) &#123;</span><br><span class="line">        <span class="keyword">if</span> (t == node)</span><br><span class="line">            <span class="keyword">return</span> <span class="keyword">true</span>;</span><br><span class="line">        <span class="keyword">if</span> (t == <span class="keyword">null</span>)</span><br><span class="line">            <span class="keyword">return</span> <span class="keyword">false</span>;</span><br><span class="line">        t = t.prev;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>当前线程应该在一个独立的和sync queue无关的队列中，怎么会出现在sync queue中呢？这个要结合signal方法来看。</p>
+<h5 id="signalAll"><a href="#signalAll" class="headerlink" title="signalAll"></a>signalAll</h5><p>调用signalAll方法的线程本身时已经持有了锁，并且准备释放锁的线程。在条件队列里的线程是已经在对应条件上挂起了，等待被signal唤醒，然后去争夺。</p>
+<p>与调用notify时线程必须时已经持有了监视器锁类似，在调用condition的signal方法时，线程必须是已经持有了lock锁：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">final</span> <span class="keyword">void</span> <span class="title">signalAll</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    <span class="keyword">if</span> (!isHeldExclusively())</span><br><span class="line">        <span class="keyword">throw</span> <span class="keyword">new</span> IllegalMonitorStateException();</span><br><span class="line">    Node first = firstWaiter;</span><br><span class="line">    <span class="keyword">if</span> (first != <span class="keyword">null</span>)</span><br><span class="line">        doSignalAll(first);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>isHeldExclusively这个方法是检查当前线程是不是持有锁的线程，这个方法通常由AQS的子类来实现。ReentrantLock对该方法的实现为：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">protected</span> <span class="keyword">final</span> <span class="keyword">boolean</span> <span class="title">isHeldExclusively</span><span class="params">()</span> </span>&#123;</span><br><span class="line">  <span class="keyword">return</span> getExclusiveOwnerThread() == Thread.currentThread();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>拿到firstWaiter判断条件队列是否为空，如果条件队列不为空，则调用doSignalAll方法：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">private</span> <span class="keyword">void</span> <span class="title">doSignalAll</span><span class="params">(Node first)</span> </span>&#123;</span><br><span class="line">    <span class="comment">//清空整个队列</span></span><br><span class="line">    lastWaiter = firstWaiter = <span class="keyword">null</span>;</span><br><span class="line">    <span class="keyword">do</span> &#123;</span><br><span class="line">        Node next = first.nextWaiter;</span><br><span class="line">        first.nextWaiter = <span class="keyword">null</span>;</span><br><span class="line">        transferForSignal(first);</span><br><span class="line">        first = next;</span><br><span class="line">    &#125; <span class="keyword">while</span> (first != <span class="keyword">null</span>);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>通过lastWaiter = firstWaiter = null;将整个队列清空掉，然后通过循环将原来的队列的节点拿出来，通过transferForSignal方法将线程一个一个放到sync queue末尾。注意这里是一个一个放进去的，可以看下transferForSignal：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">final</span> <span class="keyword">boolean</span> <span class="title">transferForSignal</span><span class="params">(Node node)</span> </span>&#123;  </span><br><span class="line">    <span class="comment">//如果这个节点在signal前被取消，那么直接返回</span></span><br><span class="line">    <span class="keyword">if</span> (!compareAndSetWaitStatus(node, Node.CONDITION, <span class="number">0</span>))</span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">false</span>;</span><br><span class="line"></span><br><span class="line">    <span class="comment">//节点插入到sync queue中</span></span><br><span class="line">    Node p = enq(node);</span><br><span class="line">    <span class="keyword">int</span> ws = p.waitStatus;</span><br><span class="line">    <span class="keyword">if</span> (ws &gt; <span class="number">0</span> || !compareAndSetWaitStatus(p, ws, Node.SIGNAL))</span><br><span class="line">        LockSupport.unpark(node.thread);</span><br><span class="line">    <span class="keyword">return</span> <span class="keyword">true</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>在transferForSignal方法中，先通过CAS操作将当前节点的waitStatus状态由CONDITION设为0，修改失败，则认为该节点已经被取消了，直接返回，操作下一个节点。如果修改成功插入到同步队列中去，这里需要注意enq返回的是node的前驱节点。sync queue中的节点需要靠前驱节点唤醒，所以需要把前驱节点waitStatus设为Node.SIGNAL。这里只要前驱节点被取消或者无法将前驱节点状态修改为Node.SIGNAL，那我们就将Node所代表的线程唤醒，但是这个不意味着lock是可以被获取的，只是唤醒这个线程去获取锁，如果获取失败，继续进入同步队列等待。</p>
+<p>总结一下signalAll方法：</p>
+<ol>
+<li>清空条件队列（只是把lastWaiter、firstWaiter设为null，队列中节点的关系还存在）</li>
+<li>将条件队列中的头节点取出，将它和后面的节点断开连接，然后调用transferForSignal方法</li>
+<li>判断该节点处于被取消状态，直接跳过该节点（该节点会被GC回收）。节点状态自由，则通过enq方法，将节点放到sync queue的末尾</li>
+<li>根据当前节点的前驱节点的waitStatus状态判断是否要唤醒当前节点，如果前驱节点被取消，或者前驱节点设置SIGNAL状态失败，直接唤醒该节点的线程</li>
+<li>重复2到4的过程，直到整个条件队列中的节点都被处理完成</li>
+</ol>
+<h5 id="signal"><a href="#signal" class="headerlink" title="signal"></a>signal</h5><p>signal只是唤醒一个节点，对于AQS的实现来说，只是唤醒条件队列中第一个没有被取消的节点。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">final</span> <span class="keyword">void</span> <span class="title">signal</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    <span class="keyword">if</span> (!isHeldExclusively())</span><br><span class="line">        <span class="keyword">throw</span> <span class="keyword">new</span> IllegalMonitorStateException();</span><br><span class="line">    Node first = firstWaiter;</span><br><span class="line">    <span class="keyword">if</span> (first != <span class="keyword">null</span>)</span><br><span class="line">        doSignal(first);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>isHeldExclusively方法已经分析过，检查当前线程是不是持有锁的线程。然后看doSignal方法：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">private</span> <span class="keyword">void</span> <span class="title">doSignal</span><span class="params">(Node first)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">do</span> &#123;</span><br><span class="line">        <span class="keyword">if</span> ( (firstWaiter = first.nextWaiter) == <span class="keyword">null</span>)</span><br><span class="line">            lastWaiter = <span class="keyword">null</span>;</span><br><span class="line">        first.nextWaiter = <span class="keyword">null</span>;</span><br><span class="line">    &#125; <span class="keyword">while</span> (!transferForSignal(first) &amp;&amp;</span><br><span class="line">             (first = firstWaiter) != <span class="keyword">null</span>);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>这个看到是一个循环，也是为了找队列中第一个没有被取消的节点，然后将这个节点放到同步队列中去。也是将first取出来，然后将nextWaiter设置为null，调用transferForSignal方法，这个方法的返回值将决定循环是否继续。如果返回true，那么while循环的条件就不满足了，所以只会唤醒一个线程。</p>
+<p>唤醒已经讲完了，我们再来看await方法。因为唤醒的时候，会让线程回到原来阻塞的地方继续执行。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">final</span> <span class="keyword">void</span> <span class="title">await</span><span class="params">()</span> <span class="keyword">throws</span> InterruptedException </span>&#123;</span><br><span class="line">    <span class="keyword">if</span> (Thread.interrupted())</span><br><span class="line">        <span class="keyword">throw</span> <span class="keyword">new</span> InterruptedException();</span><br><span class="line">    Node node = addConditionWaiter();</span><br><span class="line">    <span class="keyword">int</span> savedState = fullyRelease(node);</span><br><span class="line">    <span class="keyword">int</span> interruptMode = <span class="number">0</span>;</span><br><span class="line">    <span class="keyword">while</span> (!isOnSyncQueue(node)) &#123;</span><br><span class="line">        LockSupport.park(<span class="keyword">this</span>); </span><br><span class="line">        <span class="comment">// 这里就是阻塞回来的位置</span></span><br><span class="line">        <span class="keyword">if</span> ((interruptMode = checkInterruptWhileWaiting(node)) != <span class="number">0</span>)</span><br><span class="line">            <span class="keyword">break</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">if</span> (acquireQueued(node, savedState) &amp;&amp; interruptMode != THROW_IE)</span><br><span class="line">        interruptMode = REINTERRUPT;</span><br><span class="line">    <span class="keyword">if</span> (node.nextWaiter != <span class="keyword">null</span>) </span><br><span class="line">        unlinkCancelledWaiters();</span><br><span class="line">    <span class="keyword">if</span> (interruptMode != <span class="number">0</span>)</span><br><span class="line">        reportInterruptAfterWait(interruptMode);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>但是线程被唤醒，并不知道是什么原因被唤醒的。但是既然唤醒了，那么就需要acquireQueued方法进行“阻塞式”获取锁，抢到锁就返回，抢不到锁就继续被挂起。当await方法返回时，当前线程一定已经持有了lock锁。</p>
+<p>如果从线程被唤醒，到线程获取到锁这段过程中发生过中断，应该如何处理呢？</p>
+<p>中断对当前线程只是个建议，有当前线程决定怎么对其做出处理。acquireQueued方法对中断是不响应的，只是简单的记录抢锁过程中的中断状态，并在抢到锁后将这个中断状态返回，交给上层调用函数处理，此时也就是await方法。await方法如何处理这个中断，<strong>取决于这个中断发生时，线程是否已经被signal</strong>。</p>
+<p>在调用await方法时，就会检查当前线程的中断状态，如果线程还未阻塞就被中断，那么直接抛出InterruptedException。如果中断发生时，线程没有被signal过，那么等待中的线程就会被打断，也就是一个意料之外的唤醒，所以线程被唤醒后，需要抛出InterruptedException，表示当前线程因为中断而被唤醒。如果中断发生时，当前线程已经被signal过了，它就已经正常地从condition queue中唤醒了，那么这个中断来的就比较晚了，因为已经是正常唤醒之后才来的中断，那么就在await方法中补一下这个中断，调用Thread.interrupted()方法检测是否发生中断时也会将中断状态清除，因此如果忽略中断，则应该在await方法将线程恢复成原来的样子。</p>
+<p>在await方法中，用变量interruptMode记录中断事件：</p>
+<ol>
+<li>0：没有中断发生</li>
+<li>1：REINTERRUPT 表示中断发生在signal之后，需要再次自我中断</li>
+<li>-1:THROW_IE 表示中断发生在signal之前，需要抛出InterruptedException</li>
+</ol>
+<p>acquireQueued这个方法两个参数，我们前面说了释放锁的时候是释放所有的可重入锁，现在加锁的时候也是原来释放多少，这次就加多少锁。unlinkCancelledWaiters这个方法已经讲过了，就是遍历链表，然后把waitStatus不为CONDITION的节点从队列中移除。reportInterruptAfterWait是用来汇报中断的：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">private</span> <span class="keyword">void</span> <span class="title">reportInterruptAfterWait</span><span class="params">(<span class="keyword">int</span> interruptMode)</span></span></span><br><span class="line"><span class="function">    <span class="keyword">throws</span> InterruptedException </span>&#123;</span><br><span class="line">    <span class="keyword">if</span> (interruptMode == THROW_IE)</span><br><span class="line">        <span class="keyword">throw</span> <span class="keyword">new</span> InterruptedException();</span><br><span class="line">    <span class="keyword">else</span> <span class="keyword">if</span> (interruptMode == REINTERRUPT)</span><br><span class="line">        selfInterrupt();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>如果interruptMode=THROW_IE，则直接抛出异常，报告等待的时候被中断异常唤醒。</p>
+<p>来总结一下：</p>
+<p><strong>中断发生在signal之前</strong></p>
+<ol>
+<li>线程因为中断被唤醒，通过checkInterruptWhileWaiting方法调用transferAfterCancelledWait方法来确认线程的waitStatus的值为Node.CONDITION，说明线程没有被signal</li>
+<li>修改线程的waitStatus为0，通过enq(node)将其添加到sync queue中</li>
+<li>线程获取锁，如果获取不到，则被再次挂起</li>
+<li>线程获取到锁后，调用unlinkCancelledWaiters方法将自己从条件队列中移除，该方法顺便移除其他取消等待的锁</li>
+<li>通过reportInterruptAfterWait抛出InterruptedException</li>
+</ol>
+<p>一个调用await方法挂起的线程在被中断后不会立即抛出InterruptedException，而是进入同步队列去竞争锁，争不到，挂起，如果争到锁了，从同步队列和条件队列移除，抛出InterruptedException。</p>
+<p><strong>中断发生在signal之后</strong></p>
+<p>这种情况其实就是线程被唤醒后，然后产生的中断，并没有影响到我们线程正常的阻塞到被signal唤醒的流程，所以，我们并不需要抛出InterruptedException异常，我们可以忽略这个中断，在await方法返回的时候，将这个线程重新中断一下，对忽略的中断进行一个补偿。</p>
+<h5 id="await总结"><a href="#await总结" class="headerlink" title="await总结"></a>await总结</h5><p>我们对整个await方法进行一个总结：</p>
+<ol>
+<li>进入await()时必须已经持有了锁</li>
+<li>离开await()时必须已经持有了锁</li>
+<li>调用await()会使当前线程被封装成Node扔进条件队列，并且释放所有持有的锁</li>
+<li>释放锁后，当前线程被挂起，等待signal或者中断唤醒线程</li>
+<li>线程被唤醒后，进入同步队列进行抢锁</li>
+<li>线程在抢到锁之前发生过中断，则根据中断发生在signal之前还是之后记录中断模式，体现在interruptMode</li>
+<li>线程在抢到锁后进行售后工作（离开条件队列，处理中断异常）</li>
+</ol>
+<h5 id="awaitUninterruptibly"><a href="#awaitUninterruptibly" class="headerlink" title="awaitUninterruptibly"></a>awaitUninterruptibly</h5><p>中断和signal都可以把线程唤醒，但是中断是一种异常唤醒，唤醒以后线程发现等待的条件并为满足，还是需要将线程挂起。当不希望await方法被中断时，可以使用awaitUninterruptibly方法：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">final</span> <span class="keyword">void</span> <span class="title">awaitUninterruptibly</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    Node node = addConditionWaiter();</span><br><span class="line">    <span class="keyword">int</span> savedState = fullyRelease(node);</span><br><span class="line">    <span class="keyword">boolean</span> interrupted = <span class="keyword">false</span>;</span><br><span class="line">    <span class="keyword">while</span> (!isOnSyncQueue(node)) &#123;</span><br><span class="line">        LockSupport.park(<span class="keyword">this</span>);</span><br><span class="line">        <span class="keyword">if</span> (Thread.interrupted())</span><br><span class="line">            interrupted = <span class="keyword">true</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">if</span> (acquireQueued(node, savedState) || interrupted)</span><br><span class="line">        selfInterrupt();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>可以看到就算中断唤醒了线程，也仅仅是记录interrupted状态为true，然后继续阻塞，等到signal才会唤醒线程去获取锁，当发生中断，不管什么时候的中断，都是最终补偿中断一次，并且不会抛出InterruptedException</p>
+<h5 id="awaitNanos"><a href="#awaitNanos" class="headerlink" title="awaitNanos"></a>awaitNanos</h5><p>前面的await和awaitUninterruptibly，它们在抢锁的过程中都是阻塞式的，一直抢到锁才能返回，否则线程一直挂起，这样的话就是线程如果长时间抢不到锁，就会一直被阻塞，因此有时候更需要带超时机制的去抢锁，和wait(long timeout)很像。看下源码：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">final</span> <span class="keyword">long</span> <span class="title">awaitNanos</span><span class="params">(<span class="keyword">long</span> nanosTimeout)</span></span></span><br><span class="line"><span class="function">    <span class="keyword">throws</span> InterruptedException </span>&#123;</span><br><span class="line">    <span class="keyword">if</span> (Thread.interrupted())</span><br><span class="line">        <span class="keyword">throw</span> <span class="keyword">new</span> InterruptedException();</span><br><span class="line">    Node node = addConditionWaiter();</span><br><span class="line">    <span class="keyword">int</span> savedState = fullyRelease(node);</span><br><span class="line">    <span class="keyword">final</span> <span class="keyword">long</span> deadline = System.nanoTime() + nanosTimeout;</span><br><span class="line">    <span class="keyword">int</span> interruptMode = <span class="number">0</span>;</span><br><span class="line">    <span class="keyword">while</span> (!isOnSyncQueue(node)) &#123;</span><br><span class="line">        <span class="keyword">if</span> (nanosTimeout &lt;= <span class="number">0L</span>) &#123;</span><br><span class="line">            transferAfterCancelledWait(node);</span><br><span class="line">            <span class="keyword">break</span>;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">if</span> (nanosTimeout &gt;= spinForTimeoutThreshold)</span><br><span class="line">            LockSupport.parkNanos(<span class="keyword">this</span>, nanosTimeout);</span><br><span class="line">        <span class="keyword">if</span> ((interruptMode = checkInterruptWhileWaiting(node)) != <span class="number">0</span>)</span><br><span class="line">            <span class="keyword">break</span>;</span><br><span class="line">        nanosTimeout = deadline - System.nanoTime();</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">if</span> (acquireQueued(node, savedState) &amp;&amp; interruptMode != THROW_IE)</span><br><span class="line">        interruptMode = REINTERRUPT;</span><br><span class="line">    <span class="keyword">if</span> (node.nextWaiter != <span class="keyword">null</span>)</span><br><span class="line">        unlinkCancelledWaiters();</span><br><span class="line">    <span class="keyword">if</span> (interruptMode != <span class="number">0</span>)</span><br><span class="line">        reportInterruptAfterWait(interruptMode);</span><br><span class="line">    <span class="keyword">return</span> deadline - System.nanoTime();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>这个方法基本上和await方法一样，只是多了超时时间的处理。上面这段代码的意思是，如果超时时间没到，那么就将线程挂起，超过等待时间了，将线程从条件队列转移到同步队列中。这里对超时时间很短的时间做了一个优化，当超时时间小于spinForTimeoutThreshold(1000L ns)时，通过自旋的方式等待唤醒，而不是将线程挂起。</p>
+<p>wait(0)表示无限期等待，那么如果awaitNanos我们传0是一样的吗？</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> (nanosTimeout &lt;= <span class="number">0L</span>) &#123;</span><br><span class="line">    transferAfterCancelledWait(node);</span><br><span class="line">    <span class="keyword">break</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>上面代码中已经有这段了，我这里单独提出来再来看下。这里可以看到当nanosTimeout&lt;=0的时候，就会将线程从条件等待队列转移到同步队列中，并不会被挂起，也不需要signal。</p>
+<h5 id="await-long-time-TimeUnit-unit"><a href="#await-long-time-TimeUnit-unit" class="headerlink" title="await(long time, TimeUnit unit)"></a>await(long time, TimeUnit unit)</h5><p>这个方法就是在awaitNanos方法基础上多了对超时时间单位的设置，但是在内部实现上还是会把时间转成纳秒去执行</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">final</span> <span class="keyword">boolean</span> <span class="title">await</span><span class="params">(<span class="keyword">long</span> time, TimeUnit unit)</span></span></span><br><span class="line"><span class="function">    <span class="keyword">throws</span> InterruptedException </span>&#123;</span><br><span class="line">    <span class="keyword">long</span> nanosTimeout = unit.toNanos(time);</span><br><span class="line">    <span class="keyword">if</span> (Thread.interrupted())</span><br><span class="line">        <span class="keyword">throw</span> <span class="keyword">new</span> InterruptedException();</span><br><span class="line">    Node node = addConditionWaiter();</span><br><span class="line">    <span class="keyword">int</span> savedState = fullyRelease(node);</span><br><span class="line">    <span class="keyword">final</span> <span class="keyword">long</span> deadline = System.nanoTime() + nanosTimeout;</span><br><span class="line">    <span class="keyword">boolean</span> timedout = <span class="keyword">false</span>;</span><br><span class="line">    <span class="keyword">int</span> interruptMode = <span class="number">0</span>;</span><br><span class="line">    <span class="keyword">while</span> (!isOnSyncQueue(node)) &#123;</span><br><span class="line">        <span class="keyword">if</span> (nanosTimeout &lt;= <span class="number">0L</span>) &#123;</span><br><span class="line">            timedout = transferAfterCancelledWait(node);</span><br><span class="line">            <span class="keyword">break</span>;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">if</span> (nanosTimeout &gt;= spinForTimeoutThreshold)</span><br><span class="line">            LockSupport.parkNanos(<span class="keyword">this</span>, nanosTimeout);</span><br><span class="line">        <span class="keyword">if</span> ((interruptMode = checkInterruptWhileWaiting(node)) != <span class="number">0</span>)</span><br><span class="line">            <span class="keyword">break</span>;</span><br><span class="line">        nanosTimeout = deadline - System.nanoTime();</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">if</span> (acquireQueued(node, savedState) &amp;&amp; interruptMode != THROW_IE)</span><br><span class="line">        interruptMode = REINTERRUPT;</span><br><span class="line">    <span class="keyword">if</span> (node.nextWaiter != <span class="keyword">null</span>)</span><br><span class="line">        unlinkCancelledWaiters();</span><br><span class="line">    <span class="keyword">if</span> (interruptMode != <span class="number">0</span>)</span><br><span class="line">        reportInterruptAfterWait(interruptMode);</span><br><span class="line">    <span class="keyword">return</span> !timedout;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>awaitNanos(long nanosTimeout)的返回值是剩余的超时时间，如果该值大于0，说明超时时间还没到，则说明该返回是由signal行为导致的，而await(long time,TimeUnit unit)的返回值是transferAfterCancelledWait(node)的值决定的，调用该方法时，如果node还没有被signal过则返回true，否则返回false。其实这个方法就等价于调用awaitNanos(unit.toNanos(time)) &gt; 0。</p>
+<h3 id="awaitUntil-Date-deadline"><a href="#awaitUntil-Date-deadline" class="headerlink" title="awaitUntil(Date deadline)"></a>awaitUntil(Date deadline)</h3><p>awaitUntil方法和上面几个方法类似，只不过这个参数是一个绝对时间</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">final</span> <span class="keyword">boolean</span> <span class="title">awaitUntil</span><span class="params">(Date deadline)</span></span></span><br><span class="line"><span class="function">    <span class="keyword">throws</span> InterruptedException </span>&#123;</span><br><span class="line">    <span class="keyword">long</span> abstime = deadline.getTime();</span><br><span class="line">    <span class="keyword">if</span> (Thread.interrupted())</span><br><span class="line">        <span class="keyword">throw</span> <span class="keyword">new</span> InterruptedException();</span><br><span class="line">    Node node = addConditionWaiter();</span><br><span class="line">    <span class="keyword">int</span> savedState = fullyRelease(node);</span><br><span class="line">    <span class="keyword">boolean</span> timedout = <span class="keyword">false</span>;</span><br><span class="line">    <span class="keyword">int</span> interruptMode = <span class="number">0</span>;</span><br><span class="line">    <span class="keyword">while</span> (!isOnSyncQueue(node)) &#123;</span><br><span class="line">        <span class="keyword">if</span> (System.currentTimeMillis() &gt; abstime) &#123;</span><br><span class="line">            timedout = transferAfterCancelledWait(node);</span><br><span class="line">            <span class="keyword">break</span>;</span><br><span class="line">        &#125;</span><br><span class="line">        LockSupport.parkUntil(<span class="keyword">this</span>, abstime);</span><br><span class="line">        <span class="keyword">if</span> ((interruptMode = checkInterruptWhileWaiting(node)) != <span class="number">0</span>)</span><br><span class="line">            <span class="keyword">break</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">if</span> (acquireQueued(node, savedState) &amp;&amp; interruptMode != THROW_IE)</span><br><span class="line">        interruptMode = REINTERRUPT;</span><br><span class="line">    <span class="keyword">if</span> (node.nextWaiter != <span class="keyword">null</span>)</span><br><span class="line">        unlinkCancelledWaiters();</span><br><span class="line">    <span class="keyword">if</span> (interruptMode != <span class="number">0</span>)</span><br><span class="line">        reportInterruptAfterWait(interruptMode);</span><br><span class="line">    <span class="keyword">return</span> !timedout;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>这个方法仅仅就是时间用成了绝对时间，并且没有使用spinForTimeoutThreshold进行自旋优化，因为调用这个方法，目的就是设一个较长的等待时间，不然上面的其他方法用起来更方便一些。</p>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/blog/tags/JDK/" rel="tag"># JDK</a>
+              <a href="/blog/tags/JUC/" rel="tag"># JUC</a>
+              <a href="/blog/tags/AQS/" rel="tag"># AQS</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/blog/2021/08/19/AQS%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%E4%B9%8B%E5%85%B1%E4%BA%AB%E9%94%81%E7%9A%84%E8%8E%B7%E5%8F%96%E4%B8%8E%E9%87%8A%E6%94%BE/" rel="prev" title="AQS源码分析之共享锁的获取与释放">
+      <i class="fa fa-chevron-left"></i> AQS源码分析之共享锁的获取与释放
+    </a></div>
+      <div class="post-nav-item"></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#Condition%E5%AE%9E%E7%8E%B0"><span class="nav-number">1.</span> <span class="nav-text">Condition实现</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#await"><span class="nav-number">1.0.1.</span> <span class="nav-text">await()</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#addConditionWaiter"><span class="nav-number">1.0.2.</span> <span class="nav-text">addConditionWaiter</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#fullyRelease"><span class="nav-number">1.0.3.</span> <span class="nav-text">fullyRelease</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#signalAll"><span class="nav-number">1.0.4.</span> <span class="nav-text">signalAll</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#signal"><span class="nav-number">1.0.5.</span> <span class="nav-text">signal</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#await%E6%80%BB%E7%BB%93"><span class="nav-number">1.0.6.</span> <span class="nav-text">await总结</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#awaitUninterruptibly"><span class="nav-number">1.0.7.</span> <span class="nav-text">awaitUninterruptibly</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#awaitNanos"><span class="nav-number">1.0.8.</span> <span class="nav-text">awaitNanos</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#await-long-time-TimeUnit-unit"><span class="nav-number">1.0.9.</span> <span class="nav-text">await(long time, TimeUnit unit)</span></a></li></ol></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#awaitUntil-Date-deadline"><span class="nav-number">2.</span> <span class="nav-text">awaitUntil(Date deadline)</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">言风</p>
+  <div class="site-description" itemprop="description">让自己更值钱，你值得更好的自己</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/blog/archives/">
+        
+          <span class="site-state-item-count">36</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+        <span class="site-state-item-count">4</span>
+        <span class="site-state-item-name">categories</span>
+      </div>
+      <div class="site-state-item site-state-tags">
+        <span class="site-state-item-count">5</span>
+        <span class="site-state-item-name">tags</span>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">言风</span>
+</div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://muse.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Muse</a>
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/blog/lib/anime.min.js"></script>
+  <script src="/blog/lib/velocity/velocity.min.js"></script>
+  <script src="/blog/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/blog/js/utils.js"></script>
+
+<script src="/blog/js/motion.js"></script>
+
+
+<script src="/blog/js/schemes/muse.js"></script>
+
+
+<script src="/blog/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>
