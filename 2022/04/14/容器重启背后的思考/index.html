@@ -1,0 +1,486 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.4.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/blog/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/blog/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/blog/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/blog/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/blog/css/main.css">
+
+
+<link rel="stylesheet" href="/blog/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"vqianxiao.github.io","root":"/blog/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+  </script>
+
+  <meta name="description" content="docker容器重启背后的思考">
+<meta property="og:type" content="article">
+<meta property="og:title" content="容器重启背后的思考">
+<meta property="og:url" content="https://vqianxiao.github.io/blog/2022/04/14/%E5%AE%B9%E5%99%A8%E9%87%8D%E5%90%AF%E8%83%8C%E5%90%8E%E7%9A%84%E6%80%9D%E8%80%83/index.html">
+<meta property="og:site_name" content="言风的博客">
+<meta property="og:description" content="docker容器重启背后的思考">
+<meta property="og:locale" content="en_US">
+<meta property="article:published_time" content="2022-04-14T03:27:10.000Z">
+<meta property="article:modified_time" content="2022-04-14T03:27:10.000Z">
+<meta property="article:author" content="言风">
+<meta property="article:tag" content="问题排查">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="https://vqianxiao.github.io/blog/2022/04/14/%E5%AE%B9%E5%99%A8%E9%87%8D%E5%90%AF%E8%83%8C%E5%90%8E%E7%9A%84%E6%80%9D%E8%80%83/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'en'
+  };
+</script>
+
+  <title>容器重启背后的思考 | 言风的博客</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/blog/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">言风的博客</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+      <p class="site-subtitle" itemprop="description">世界上并没有完美的程序，但我们并不因此而沮丧，因为写程序本来就是一个不断追求完美的过程。</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/blog/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/blog/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>Archives</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
+    <link itemprop="mainEntityOfPage" href="https://vqianxiao.github.io/blog/2022/04/14/%E5%AE%B9%E5%99%A8%E9%87%8D%E5%90%AF%E8%83%8C%E5%90%8E%E7%9A%84%E6%80%9D%E8%80%83/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/blog/images/avatar.gif">
+      <meta itemprop="name" content="言风">
+      <meta itemprop="description" content="让自己更值钱，你值得更好的自己">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="言风的博客">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          容器重启背后的思考
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2022-04-14 11:27:10" itemprop="dateCreated datePublished" datetime="2022-04-14T11:27:10+08:00">2022-04-14</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/blog/categories/%E9%97%AE%E9%A2%98%E6%8E%92%E6%9F%A5/" itemprop="url" rel="index"><span itemprop="name">问题排查</span></a>
+                </span>
+            </span>
+
+          
+            <div class="post-description">docker容器重启背后的思考</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p>前几天同事喊我说一个容器过一段时间就会重启，然后重启的原因是OOMKilled。第一反应是代码有问题，检查了下最近的提交，并没有发现可疑的代码。看了下jvm参数配置，发现并没有如下配置:</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">-XX:+HeapDumpOnOutOfMemoryError</span><br><span class="line">-XX:HeapDumpPath=/root/logs/java_heapdump.hprof</span><br></pre></td></tr></table></figure>
+<p>也没有办法证明是JVM发生OOM导致容器被重启。看了下Cat监控的GC情况，发现并没有出现GC以后，内存还在继续增长的情况，说明不太可能是因为JVM发生OOM导致的。然后加了上面的参数，等待复现。<br>没多久就看到容器重启告警了，检查GC情况发现内存还是可以回收掉的，然后检查日志，日志中也没有出现OutOfMemoryError的错误，/root/logs目录下也并没有生成dump文件。那么问题明朗了，发生OOM的应该不是JVM。</p>
+<p>检查下JVM完整的启动参数，参数如下:</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line">-javaagent:/root/org.jacoco.agent-5.9.9.jar=output=tcpserver,address=0.0.0.0,port=6300 </span><br><span class="line">## 堆内存最大大小</span><br><span class="line">-Xmx2g </span><br><span class="line">## 堆内存初始大小</span><br><span class="line">-Xms2g </span><br><span class="line">## 年轻代大小(eden+ 2 survivor)</span><br><span class="line">-Xmn1g </span><br><span class="line">## 元空间最大大小</span><br><span class="line">-XX:MaxMetaspaceSize=1g </span><br><span class="line">## 元空间大小</span><br><span class="line">-XX:MetaspaceSize=256m</span><br><span class="line">## 最大DirectMemory</span><br><span class="line">-XX:MaxDirectMemorySize=96m</span><br><span class="line">## 每个线程的栈大小</span><br><span class="line">-Xss256k</span><br><span class="line">## STW 工作线程数</span><br><span class="line">-XX:ParallelGCThreads=2 </span><br><span class="line">-DignoreCaptchaCheck=true </span><br><span class="line">-DmockLuckBag=true </span><br><span class="line">## 不省略异常(NullPointerException、ArithmeticException、ArrayIndexOutOfBoundsException、ArrayStoreException、ClassCastException)</span><br><span class="line">-XX:-OmitStackTraceInFastThrow </span><br><span class="line">## Does nothing. Provided for backward compatibility.</span><br><span class="line">-Xdebug </span><br><span class="line">## 远程调试参数</span><br><span class="line">-Xrunjdwp:transport=dt_socket,server=y,suspend=n,address=1088</span><br></pre></td></tr></table></figure>
+<h3 id="凶手是Docker？"><a href="#凶手是Docker？" class="headerlink" title="凶手是Docker？"></a>凶手是Docker？</h3><p>Docker的配置为2C 2G。会不会是Docker容器把我们的进程杀死了呢？因为我们设置堆的最大内存是2G，而整个Docker容器也仅仅只有2G的内存空间。对于Linux系统来说，一旦内核检测到没有足够的内存可以分配，就会扔出OOM，并开始杀死一些进程用于释放内存空间，但是糟糕的是任何进程都可能成为内核猎杀的对象，包括docker daemon和其它一些重要的进程。更危险的是如果某个支撑系统运行的重要进程被干掉了，整个系统也就宕掉了。如果大量的容器把主机的内存消耗殆尽，OOM被触发后系统内核立即开始杀进程释放内存。如果内核杀死的第一个进程就是docker daemon会怎么样？结果就是没办法管理运行中的容器，这是不可以接受的。</p>
+<p>针对这个问题，docker尝试通过调整docker daemon的OOM优先级来进行缓解。内核在选择要杀死的进程时会对所有的进程打分，直接杀死的分最高的进程，接着是下一个。当docker daemon的OOM优先级被降低后（注意容器进程的OOM优先级并没有被调整），docker daemon进程的得分不仅会低于容器进程的得分，还会低于其它一些进程的的分，这样docker daemon进程就安全多了。</p>
+<p>不过docker的官方文档中一直强调这只是一种缓解的方案，并且为我们提供了一些降低风险的建议：</p>
+<ul>
+<li>通过测试掌握应用对内存的需求</li>
+<li>保证运行容器的主机有充足的内存</li>
+<li>限制容器可以使用的内存</li>
+<li>为主机配置swap</li>
+</ul>
+<p>其实说白了，就是通过限制容器使用的内存上限，来降低主机内存耗尽时带来的各种风险。</p>
+<h3 id="Docker相关知识"><a href="#Docker相关知识" class="headerlink" title="Docker相关知识"></a>Docker相关知识</h3><p>Docker使用Google公司推出的Go语言进行开发实现，基于Linux内核的cgroup，namespace，以及OverlayFS类的Union FS等技术，对进程进行封装隔离，属于操作系统层面的虚拟化技术。</p>
+<p>cgroup，名称源自控制组群（control groups）的简写，是Linux内核的一个功能，用来限制、控制与分离一个进程组的资源（如CPU、内存、磁盘输入输出等）。cgroups的一个设计目标是为不同的应用情况提供统一的接口，从控制单一进程到操作系统层虚拟化。cgroups提供：</p>
+<ul>
+<li>资源限制：组可以被设置不超过设定的内存限制；也包括虚拟内存</li>
+<li>优先级：一些组可能会得到大量的CPU或磁盘IO吞吐量</li>
+<li>结算：用来度量系统实际用了多少资源</li>
+<li>控制：冻结组或检查点和重启动</li>
+</ul>
+<h4 id="更高效的利用系统资源"><a href="#更高效的利用系统资源" class="headerlink" title="更高效的利用系统资源"></a>更高效的利用系统资源</h4><p>Docker容器因为不需要硬件虚拟以及完整操作系统等额外开销，Docker对系统资源的利用率更高。无论是应用执行速度、内存损耗或者文件存储速度，都要比传统虚拟机技术更高效。因此，相比虚拟机技术，一个相同配置的主机，往往可以运行更多数量的应用。</p>
+<h4 id="更快速的启动时间"><a href="#更快速的启动时间" class="headerlink" title="更快速的启动时间"></a>更快速的启动时间</h4><p>传统的虚拟机技术启动应用服务往往需要数分钟，而Docker容器应用，由于直接运行于宿主内核，无需启动完整的操作系统，因此可以做到秒级、甚至毫秒级的启动时间，大大节约了时间。</p>
+<h4 id="一致的运行环境"><a href="#一致的运行环境" class="headerlink" title="一致的运行环境"></a>一致的运行环境</h4><p>开发过程中一个常见的问题是环境一致性问题。由于开发环境、测试环境、生产环境不一致，导致有些bug并未在开发过程中被发现。而Docker的镜像提供了除内核外完整的运行时环境，确保了应用运行环境的一致。</p>
+<h4 id="持续交付和部署"><a href="#持续交付和部署" class="headerlink" title="持续交付和部署"></a>持续交付和部署</h4><p>我们希望一次创建或者配置，可以在任意地方正常运行。使用Docker可以通过定制应用镜像来实现持续集成、持续交付、部署。开发人员可以通过Dockerfile来进行镜像构建，并结合持续集成系统进行集成测试，而运维人员可以直接在生产环境中快速部署该镜像，甚至结合持续部署系统进行自动化部署。</p>
+<p>使用Dockerfile使镜像构建透明化，不仅开发团队可以理解应用运行环境，也方便运维团队理解应用运行所需条件，帮助更好的生产环境中部署该镜像。</p>
+<h4 id="更轻松的迁移"><a href="#更轻松的迁移" class="headerlink" title="更轻松的迁移"></a>更轻松的迁移</h4><p>由于Docker确保了执行环境的一致性，使得应用的迁移更加容易。Docker可以在很多平台上运行，无论是物理机、虚拟机、公有云、私有云，运行结果都是一致的。用户可以很轻松的将在一个平台上运行的应用，迁移到另一个平台上，而不用担心运行环境的变化导致应用无法正常运行的情况。</p>
+<h4 id="更轻松的维护和扩展"><a href="#更轻松的维护和扩展" class="headerlink" title="更轻松的维护和扩展"></a>更轻松的维护和扩展</h4><p>Docker使用的分层存储以及镜像的技术，使得应用重复部分的服用更为容易，也使得应用的维护更加更加简单，基于基础镜像进一步扩展镜像也变得非常简单。Docker团队同各个开源项目团队一起维护了一大批高质量的官方镜像，既可以直接在生产环境使用，又可以作为基础进一步定制，大大的降低了应用服务的镜像制作成本。</p>
+<h4 id="Docker容器对比虚拟机总结"><a href="#Docker容器对比虚拟机总结" class="headerlink" title="Docker容器对比虚拟机总结"></a>Docker容器对比虚拟机总结</h4><table>
+<thead>
+<tr>
+<th>特性</th>
+<th>容器</th>
+<th>虚拟机</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>启动</td>
+<td>秒级</td>
+<td>分钟级</td>
+</tr>
+<tr>
+<td>硬盘使用</td>
+<td>一般为MB</td>
+<td>一般为GB</td>
+</tr>
+<tr>
+<td>性能</td>
+<td>接近原生</td>
+<td>弱于</td>
+</tr>
+<tr>
+<td>系统支持量</td>
+<td>单机支持上千个容器</td>
+<td>一般几十个</td>
+</tr>
+</tbody></table>
+<h4 id="JVM对资源的限制"><a href="#JVM对资源的限制" class="headerlink" title="JVM对资源的限制"></a>JVM对资源的限制</h4><p>在不显式的指明一些参数的时候，JVM通常会读取一些数据作为默认值。那么JVM运行在Docker容器中，读取的内存，cpu数是用的物理机的还是Docker限制的cgroup的呢？</p>
+<h4 id="CPU"><a href="#CPU" class="headerlink" title="CPU"></a>CPU</h4><p>如果不显式的指定 <em>-XX:ParallelGCThreads</em> and <em>-XX:CICompilerCount</em>，那么JVM就会根据读到的CPU数目进行计算来设置数值。</p>
+<p>在计算Parallel GC的Threads数目的地方<code>runtime\vm_version.cpp</code>  （基于1.8.0_121-b36）</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> (<span class="built_in">FLAG_IS_DEFAULT</span>(ParallelGCThreads)) &#123;</span><br><span class="line">    <span class="built_in">assert</span>(ParallelGCThreads == <span class="number">0</span>, <span class="string">&quot;Default ParallelGCThreads is not 0&quot;</span>);</span><br><span class="line">    <span class="comment">// For very large machines, there are diminishing returns</span></span><br><span class="line">    <span class="comment">// for large numbers of worker threads.  Instead of</span></span><br><span class="line">    <span class="comment">// hogging the whole system, use a fraction of the workers for every</span></span><br><span class="line">    <span class="comment">// processor after the first 8.  For example, on a 72 cpu machine</span></span><br><span class="line">    <span class="comment">// and a chosen fraction of 5/8</span></span><br><span class="line">    <span class="comment">// use 8 + (72 - 8) * (5/8) == 48 worker threads.</span></span><br><span class="line">    <span class="keyword">unsigned</span> <span class="keyword">int</span> ncpus = (<span class="keyword">unsigned</span> <span class="keyword">int</span>) os::<span class="built_in">initial_active_processor_count</span>();</span><br><span class="line">    <span class="keyword">return</span> (ncpus &lt;= switch_pt) ?</span><br><span class="line">           ncpus :</span><br><span class="line">          (switch_pt + ((ncpus - switch_pt) * num) / den);</span><br><span class="line">  &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">    <span class="keyword">return</span> ParallelGCThreads;</span><br><span class="line">  &#125;</span><br></pre></td></tr></table></figure>
+<p>调用获取cpu数目的os::initial_active_processor_count()方法：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">os::active_processor_count</span><span class="params">()</span> </span>&#123;</span><br><span class="line">  <span class="keyword">cpu_set_t</span> cpus;  <span class="comment">// can represent at most 1024 (CPU_SETSIZE) processors</span></span><br><span class="line">  <span class="keyword">int</span> cpus_size = <span class="built_in"><span class="keyword">sizeof</span></span>(<span class="keyword">cpu_set_t</span>);</span><br><span class="line">  <span class="keyword">int</span> cpu_count = <span class="number">0</span>;</span><br><span class="line"></span><br><span class="line">  <span class="comment">// pid 0 means the current thread - which we have to assume represents the process</span></span><br><span class="line">  <span class="keyword">if</span> (<span class="built_in">sched_getaffinity</span>(<span class="number">0</span>, cpus_size, &amp;cpus) == <span class="number">0</span>) &#123;</span><br><span class="line">    cpu_count = <span class="built_in">os_cpu_count</span>(&amp;cpus);</span><br><span class="line">    <span class="keyword">if</span> (PrintActiveCpus) &#123;</span><br><span class="line">      tty-&gt;<span class="built_in">print_cr</span>(<span class="string">&quot;active_processor_count: sched_getaffinity processor count: %d&quot;</span>, cpu_count);</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">else</span> &#123;</span><br><span class="line">    cpu_count = ::<span class="built_in">sysconf</span>(_SC_NPROCESSORS_ONLN);</span><br><span class="line">    <span class="built_in">warning</span>(<span class="string">&quot;sched_getaffinity failed (%s)- using online processor count (%d) &quot;</span></span><br><span class="line">            <span class="string">&quot;which may exceed available processors&quot;</span>, <span class="built_in">strerror</span>(errno), cpu_count);</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="built_in">assert</span>(cpu_count &gt; <span class="number">0</span> &amp;&amp; cpu_count &lt;= <span class="built_in">processor_count</span>(), <span class="string">&quot;sanity check&quot;</span>);</span><br><span class="line">  <span class="keyword">return</span> cpu_count;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>可以看到上面的代码，其中有一个<code>sched_getaffinity()</code>获取cpu亲和力这个方法，这个方法看解释是获取进程的掩码写入到<code>cpu_set_t</code>中，进程的Cpu关联掩码决定了它有资格运行的Cpu集。成功返回0，错误返回-1或错误码。具体可以参考这个 <a target="_blank" rel="noopener" href="https://linux.die.net/man/2/sched_getaffinity">https://linux.die.net/man/2/sched_getaffinity</a> 。</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">static</span> <span class="keyword">int</span> <span class="title">os_cpu_count</span><span class="params">(<span class="keyword">const</span> <span class="keyword">cpu_set_t</span>* cpus)</span> </span>&#123;</span><br><span class="line">  <span class="keyword">int</span> count = <span class="number">0</span>;</span><br><span class="line">  <span class="comment">// only look up to the number of configured processors</span></span><br><span class="line">  <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; os::<span class="built_in">processor_count</span>(); i++) &#123;</span><br><span class="line">    <span class="keyword">if</span> (<span class="built_in">CPU_ISSET</span>(i, cpus)) &#123;</span><br><span class="line">      count++;</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">return</span> count;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>这里调用processor_count函数来获取所有的CPU核数。然后去检查是否在这个cpu是不是集合的成员，是成员则增加计数。</p>
+<p>_processor_count这个变量通过set_processor_count函数去赋值。</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">void</span> os::Linux::<span class="built_in">initialize_system_info</span>() &#123;</span><br><span class="line">  <span class="built_in">set_processor_count</span>(<span class="built_in">sysconf</span>(_SC_NPROCESSORS_CONF));</span><br><span class="line">  <span class="keyword">if</span> (<span class="built_in">processor_count</span>() == <span class="number">1</span>) &#123;</span><br><span class="line">    <span class="keyword">pid_t</span> pid = os::Linux::<span class="built_in">gettid</span>();</span><br><span class="line">    <span class="keyword">char</span> fname[<span class="number">32</span>];</span><br><span class="line">    <span class="built_in">jio_snprintf</span>(fname, <span class="built_in"><span class="keyword">sizeof</span></span>(fname), <span class="string">&quot;/proc/%d&quot;</span>, pid);</span><br><span class="line">    FILE *fp = <span class="built_in">fopen</span>(fname, <span class="string">&quot;r&quot;</span>);</span><br><span class="line">    <span class="keyword">if</span> (fp == <span class="literal">NULL</span>) &#123;</span><br><span class="line">      unsafe_chroot_detected = <span class="literal">true</span>;</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">      <span class="built_in">fclose</span>(fp);</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">  _physical_memory = (julong)<span class="built_in">sysconf</span>(_SC_PHYS_PAGES) * (julong)<span class="built_in">sysconf</span>(_SC_PAGESIZE);</span><br><span class="line">  <span class="built_in">assert</span>(<span class="built_in">processor_count</span>() &gt; <span class="number">0</span>, <span class="string">&quot;linux error&quot;</span>);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>其实获取CPU核数都是通过调用系统sysconf函数来获取，只不过一个是<code>_SC_NPROCESSORS_CONF</code> 一个是 <code>_SC_NPROCESSORS_ONLN</code> 。</p>
+<p><strong>_SC_NPROCESSORS_CONF</strong> ：返回系统所有的CPU核数，这个值也包括系统中禁止用户使用的CPU个数；</p>
+<p><strong>_SC_NPROCESSORS_ONLN</strong>：返回系统中可用的CPU核数；</p>
+<h4 id="内存"><a href="#内存" class="headerlink" title="内存"></a>内存</h4><p>既然读取CPU会出错，那么内存应该也是一样的，在不显式的指定一些参数时如-Xmx(MaxHeapSize)、-Xms(InitialHeapSize)时，JVM会根据它读取到的机器的内存大小做一些默认的设置如：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">Arguments::set_heap_size</span><span class="params">()</span> </span>&#123;</span><br><span class="line">  <span class="keyword">if</span> (!<span class="built_in">FLAG_IS_DEFAULT</span>(DefaultMaxRAMFraction)) &#123;</span><br><span class="line">    <span class="comment">// Deprecated flag</span></span><br><span class="line">    <span class="built_in">FLAG_SET_CMDLINE</span>(uintx, MaxRAMFraction, DefaultMaxRAMFraction);</span><br><span class="line">  &#125;</span><br><span class="line">  </span><br><span class="line">  julong phys_mem =</span><br><span class="line">    <span class="built_in">FLAG_IS_DEFAULT</span>(MaxRAM) ? <span class="built_in">MIN2</span>(os::<span class="built_in">physical_memory</span>(), (julong)MaxRAM)</span><br><span class="line">                            : (julong)MaxRAM;</span><br><span class="line">  </span><br><span class="line">  <span class="comment">// Experimental support for CGroup memory limits</span></span><br><span class="line">  <span class="keyword">if</span> (UseCGroupMemoryLimitForHeap) &#123;</span><br><span class="line">    <span class="comment">// This is a rough indicator that a CGroup limit may be in force</span></span><br><span class="line">    <span class="comment">// for this process</span></span><br><span class="line">    <span class="keyword">const</span> <span class="keyword">char</span>* lim_file = <span class="string">&quot;/sys/fs/cgroup/memory/memory.limit_in_bytes&quot;</span>;</span><br><span class="line">    FILE *fp = <span class="built_in">fopen</span>(lim_file, <span class="string">&quot;r&quot;</span>);</span><br><span class="line">    <span class="keyword">if</span> (fp != <span class="literal">NULL</span>) &#123;</span><br><span class="line">      julong cgroup_max = <span class="number">0</span>;</span><br><span class="line">      <span class="keyword">int</span> ret = <span class="built_in">fscanf</span>(fp, JULONG_FORMAT, &amp;cgroup_max);</span><br><span class="line">      <span class="keyword">if</span> (ret == <span class="number">1</span> &amp;&amp; cgroup_max &gt; <span class="number">0</span>) &#123;</span><br><span class="line">        <span class="comment">// If unlimited, cgroup_max will be a very large, but unspecified</span></span><br><span class="line">        <span class="comment">// value, so use initial phys_mem as a limit</span></span><br><span class="line">        <span class="keyword">if</span> (PrintGCDetails &amp;&amp; Verbose) &#123;</span><br><span class="line">          <span class="comment">// Cannot use gclog_or_tty yet.</span></span><br><span class="line">          tty-&gt;<span class="built_in">print_cr</span>(<span class="string">&quot;Setting phys_mem to the min of cgroup limit (&quot;</span></span><br><span class="line">                        JULONG_FORMAT <span class="string">&quot;MB) and initial phys_mem (&quot;</span></span><br><span class="line">                        JULONG_FORMAT <span class="string">&quot;MB)&quot;</span>, cgroup_max/M, phys_mem/M);</span><br><span class="line">        &#125;</span><br><span class="line">        phys_mem = <span class="built_in">MIN2</span>(cgroup_max, phys_mem);</span><br><span class="line">      &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">        <span class="built_in">warning</span>(<span class="string">&quot;Unable to read/parse cgroup memory limit from %s: %s&quot;</span>,</span><br><span class="line">                lim_file, errno != <span class="number">0</span> ? <span class="built_in">strerror</span>(errno) : <span class="string">&quot;unknown error&quot;</span>);</span><br><span class="line">      &#125;</span><br><span class="line">      <span class="built_in">fclose</span>(fp);</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">      <span class="built_in">warning</span>(<span class="string">&quot;Unable to open cgroup memory limit file %s (%s)&quot;</span>, lim_file, <span class="built_in">strerror</span>(errno));</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br></pre></td></tr></table></figure>
+<p>意外发现竟然有对CGroup的支持，只不过是实验支持，可以使用-XX:+UseCGroupMemoryLimitForHeap开启这个支持，不过既然是实验支持可能还不太支持，最好还是手动指定一下比较稳妥。</p>
+<p>在 <a href="%22https://bugs.openjdk.java.net/browse/JDK-8146115%22">JDK-8146115</a> 中发现Docker的增强已经在JDK10中实现了，使用-XX:+UseContainerSupport可以开启容器支持，这一增强已经被Backports 到了JDK8的一些新版本中。</p>
+<p>最新版的os::active_processor_count()变成了：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// Determine the active processor count from one of</span></span><br><span class="line"><span class="comment">// three different sources:</span></span><br><span class="line"><span class="comment">//</span></span><br><span class="line"><span class="comment">// 1. User option -XX:ActiveProcessorCount</span></span><br><span class="line"><span class="comment">// 2. kernel os calls (sched_getaffinity or sysconf(_SC_NPROCESSORS_ONLN)</span></span><br><span class="line"><span class="comment">// 3. extracted from cgroup cpu subsystem (shares and quotas)</span></span><br><span class="line"><span class="comment">//</span></span><br><span class="line"><span class="comment">// Option 1, if specified, will always override.</span></span><br><span class="line"><span class="comment">// If the cgroup subsystem is active and configured, we</span></span><br><span class="line"><span class="comment">// will return the min of the cgroup and option 2 results.</span></span><br><span class="line"><span class="comment">// This is required since tools, such as numactl, that</span></span><br><span class="line"><span class="comment">// alter cpu affinity do not update cgroup subsystem</span></span><br><span class="line"><span class="comment">// cpuset configuration files.</span></span><br><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">os::active_processor_count</span><span class="params">()</span> </span>&#123;</span><br><span class="line">  <span class="comment">// User has overridden the number of active processors</span></span><br><span class="line">  <span class="keyword">if</span> (ActiveProcessorCount &gt; <span class="number">0</span>) &#123;</span><br><span class="line">    <span class="keyword">if</span> (PrintActiveCpus) &#123;</span><br><span class="line">      tty-&gt;<span class="built_in">print_cr</span>(<span class="string">&quot;active_processor_count: &quot;</span></span><br><span class="line">                    <span class="string">&quot;active processor count set by user : %d&quot;</span>,</span><br><span class="line">                    ActiveProcessorCount);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> ActiveProcessorCount;</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="keyword">int</span> active_cpus;</span><br><span class="line">  <span class="keyword">if</span> (OSContainer::<span class="built_in">is_containerized</span>()) &#123;</span><br><span class="line">    active_cpus = OSContainer::<span class="built_in">active_processor_count</span>();</span><br><span class="line">    <span class="keyword">if</span> (PrintActiveCpus) &#123;</span><br><span class="line">      tty-&gt;<span class="built_in">print_cr</span>(<span class="string">&quot;active_processor_count: determined by OSContainer: %d&quot;</span>,</span><br><span class="line">                     active_cpus);</span><br><span class="line">    &#125;</span><br><span class="line">  &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">    active_cpus = os::Linux::<span class="built_in">active_processor_count</span>();</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="keyword">return</span> active_cpus;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>可以看到如果有-XX:ActiveProcessorCount参数则使用参数，如果没有就会去OSContainer::is_containerized()判断是否是容器，然后获取容器对资源的限制。</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">inline</span> <span class="keyword">bool</span> <span class="title">OSContainer::is_containerized</span><span class="params">()</span> </span>&#123;</span><br><span class="line">  <span class="built_in">assert</span>(_is_initialized, <span class="string">&quot;OSContainer not initialized&quot;</span>);</span><br><span class="line">  <span class="keyword">return</span> _is_containerized;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>这里_is_containerized是由Threads::create_vm调用OSContainer::init()时检查虚拟机是否运行在容器中得来的。（osContainer_linux.hpp）</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/* init</span></span><br><span class="line"><span class="comment"> *</span></span><br><span class="line"><span class="comment"> * Initialize the container support and determine if</span></span><br><span class="line"><span class="comment"> * we are running under cgroup control.</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">OSContainer::init</span><span class="params">()</span> </span>&#123;</span><br><span class="line">  FILE *mntinfo = <span class="literal">NULL</span>;</span><br><span class="line">  FILE *cgroup = <span class="literal">NULL</span>;</span><br><span class="line">  <span class="keyword">char</span> buf[MAXPATHLEN+<span class="number">1</span>];</span><br><span class="line">  <span class="keyword">char</span> tmproot[MAXPATHLEN+<span class="number">1</span>];</span><br><span class="line">  <span class="keyword">char</span> tmpmount[MAXPATHLEN+<span class="number">1</span>];</span><br><span class="line">  <span class="keyword">char</span> *p;</span><br><span class="line">  jlong mem_limit;</span><br><span class="line"></span><br><span class="line">  <span class="built_in">assert</span>(!_is_initialized, <span class="string">&quot;Initializing OSContainer more than once&quot;</span>);</span><br><span class="line"></span><br><span class="line">  _is_initialized = <span class="literal">true</span>;</span><br><span class="line">  _is_containerized = <span class="literal">false</span>;</span><br><span class="line"></span><br><span class="line">  _unlimited_memory = (LONG_MAX / os::<span class="built_in">vm_page_size</span>()) * os::<span class="built_in">vm_page_size</span>();</span><br><span class="line"></span><br><span class="line">  <span class="keyword">if</span> (PrintContainerInfo) &#123;</span><br><span class="line">    tty-&gt;<span class="built_in">print_cr</span>(<span class="string">&quot;OSContainer::init: Initializing Container Support&quot;</span>);</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">if</span> (!UseContainerSupport) &#123;</span><br><span class="line">    <span class="keyword">if</span> (PrintContainerInfo) &#123;</span><br><span class="line">      tty-&gt;<span class="built_in">print_cr</span>(<span class="string">&quot;Container Support not enabled&quot;</span>);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span>;</span><br><span class="line">  &#125;</span><br><span class="line">  </span><br><span class="line">  <span class="comment">/*</span></span><br><span class="line"><span class="comment">   * Find the cgroup mount point for memory and cpuset</span></span><br><span class="line"><span class="comment">   * by reading /proc/self/mountinfo</span></span><br><span class="line"><span class="comment">   *</span></span><br><span class="line"><span class="comment">   * Example for docker:</span></span><br><span class="line"><span class="comment">   * 219 214 0:29 /docker/7208cebd00fa5f2e342b1094f7bed87fa25661471a4637118e65f1c995be8a34 /sys/fs/cgroup/memory ro,nosuid,nodev,noexec,relatime - cgroup cgroup rw,memory</span></span><br><span class="line"><span class="comment">   *</span></span><br><span class="line"><span class="comment">   * Example for host:</span></span><br><span class="line"><span class="comment">   * 34 28 0:29 / /sys/fs/cgroup/memory rw,nosuid,nodev,noexec,relatime shared:16 - cgroup cgroup rw,memory</span></span><br><span class="line"><span class="comment">   */</span></span><br><span class="line">   mntinfo = <span class="built_in">fopen</span>(<span class="string">&quot;/proc/self/mountinfo&quot;</span>, <span class="string">&quot;r&quot;</span>);</span><br><span class="line">  <span class="keyword">if</span> (mntinfo == <span class="literal">NULL</span>) &#123;</span><br><span class="line">      <span class="keyword">if</span> (PrintContainerInfo) &#123;</span><br><span class="line">        tty-&gt;<span class="built_in">print_cr</span>(<span class="string">&quot;Can&#x27;t open /proc/self/mountinfo, %s&quot;</span>,</span><br><span class="line">                       <span class="built_in">strerror</span>(errno));</span><br><span class="line">      &#125;</span><br><span class="line">      <span class="keyword">return</span>;</span><br><span class="line">  &#125;</span><br><span class="line">  ···</span><br><span class="line">    <span class="comment">/*</span></span><br><span class="line"><span class="comment">   * Read /proc/self/cgroup and map host mount point to</span></span><br><span class="line"><span class="comment">   * local one via /proc/self/mountinfo content above</span></span><br><span class="line"><span class="comment">   *</span></span><br><span class="line"><span class="comment">   * Docker example:</span></span><br><span class="line"><span class="comment">   * 5:memory:/docker/6558aed8fc662b194323ceab5b964f69cf36b3e8af877a14b80256e93aecb044</span></span><br><span class="line"><span class="comment">   *</span></span><br><span class="line"><span class="comment">   * Host example:</span></span><br><span class="line"><span class="comment">   * 5:memory:/user.slice</span></span><br><span class="line"><span class="comment">   *</span></span><br><span class="line"><span class="comment">   * Construct a path to the process specific memory and cpuset</span></span><br><span class="line"><span class="comment">   * cgroup directory.</span></span><br><span class="line"><span class="comment">   *</span></span><br><span class="line"><span class="comment">   * For a container running under Docker from memory example above</span></span><br><span class="line"><span class="comment">   * the paths would be:</span></span><br><span class="line"><span class="comment">   *</span></span><br><span class="line"><span class="comment">   * /sys/fs/cgroup/memory</span></span><br><span class="line"><span class="comment">   *</span></span><br><span class="line"><span class="comment">   * For a Host from memory example above the path would be:</span></span><br><span class="line"><span class="comment">   *</span></span><br><span class="line"><span class="comment">   * /sys/fs/cgroup/memory/user.slice</span></span><br><span class="line"><span class="comment">   *</span></span><br><span class="line"><span class="comment">   */</span></span><br><span class="line">    cgroup = <span class="built_in">fopen</span>(<span class="string">&quot;/proc/self/cgroup&quot;</span>, <span class="string">&quot;r&quot;</span>);</span><br><span class="line">  <span class="keyword">if</span> (cgroup == <span class="literal">NULL</span>) &#123;</span><br><span class="line">    <span class="keyword">if</span> (PrintContainerInfo) &#123;</span><br><span class="line">      tty-&gt;<span class="built_in">print_cr</span>(<span class="string">&quot;Can&#x27;t open /proc/self/cgroup, %s&quot;</span>,</span><br><span class="line">                     <span class="built_in">strerror</span>(errno));</span><br><span class="line">      &#125;</span><br><span class="line">    <span class="keyword">return</span>;</span><br><span class="line">  &#125;</span><br><span class="line">  ···</span><br><span class="line">  _is_containerized = <span class="literal">true</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>可以看到这里初始化的时候会先判断-XX:+UseContainerSupport 是否开启，/proc/self/mountinfo 、/proc/self/cgroup 是否可读等，如果运行在容器中，那么就会调用OSContainer::active_processor_count获取容器限制的CPU数目（osContainer_linux.hpp）：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/* active_processor_count</span></span><br><span class="line"><span class="comment"> *</span></span><br><span class="line"><span class="comment"> * Calculate an appropriate number of active processors for the</span></span><br><span class="line"><span class="comment"> * VM to use based on these three inputs.</span></span><br><span class="line"><span class="comment"> *</span></span><br><span class="line"><span class="comment"> * cpu affinity</span></span><br><span class="line"><span class="comment"> * cgroup cpu quota &amp; cpu period</span></span><br><span class="line"><span class="comment"> * cgroup cpu shares</span></span><br><span class="line"><span class="comment"> *</span></span><br><span class="line"><span class="comment"> * Algorithm:</span></span><br><span class="line"><span class="comment"> *</span></span><br><span class="line"><span class="comment"> * Determine the number of available CPUs from sched_getaffinity</span></span><br><span class="line"><span class="comment"> *</span></span><br><span class="line"><span class="comment"> * If user specified a quota (quota != -1), calculate the number of</span></span><br><span class="line"><span class="comment"> * required CPUs by dividing quota by period.</span></span><br><span class="line"><span class="comment"> *</span></span><br><span class="line"><span class="comment"> * If shares are in effect (shares != -1), calculate the number</span></span><br><span class="line"><span class="comment"> * of CPUs required for the shares by dividing the share value</span></span><br><span class="line"><span class="comment"> * by PER_CPU_SHARES.</span></span><br><span class="line"><span class="comment"> *</span></span><br><span class="line"><span class="comment"> * All results of division are rounded up to the next whole number.</span></span><br><span class="line"><span class="comment"> *</span></span><br><span class="line"><span class="comment"> * If neither shares or quotas have been specified, return the</span></span><br><span class="line"><span class="comment"> * number of active processors in the system.</span></span><br><span class="line"><span class="comment"> *</span></span><br><span class="line"><span class="comment"> * If both shares and quotas have been specified, the results are</span></span><br><span class="line"><span class="comment"> * based on the flag PreferContainerQuotaForCPUCount.  If true,</span></span><br><span class="line"><span class="comment"> * return the quota value.  If false return the smallest value</span></span><br><span class="line"><span class="comment"> * between shares or quotas.</span></span><br><span class="line"><span class="comment"> *</span></span><br><span class="line"><span class="comment"> * If shares and/or quotas have been specified, the resulting number</span></span><br><span class="line"><span class="comment"> * returned will never exceed the number of active processors.</span></span><br><span class="line"><span class="comment"> *</span></span><br><span class="line"><span class="comment"> * return:</span></span><br><span class="line"><span class="comment"> *    number of CPUs</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">OSContainer::active_processor_count</span><span class="params">()</span> </span>&#123;</span><br><span class="line">  <span class="keyword">int</span> quota_count = <span class="number">0</span>, share_count = <span class="number">0</span>;</span><br><span class="line">  <span class="keyword">int</span> cpu_count, limit_count;</span><br><span class="line">  <span class="keyword">int</span> result;</span><br><span class="line"></span><br><span class="line">  <span class="comment">// We use a cache with a timeout to avoid performing expensive</span></span><br><span class="line">  <span class="comment">// computations in the event this function is called frequently.</span></span><br><span class="line">  <span class="comment">// [See 8227006].</span></span><br><span class="line">  <span class="keyword">if</span> (!cpu-&gt;<span class="built_in">cache_has_expired</span>()) &#123;</span><br><span class="line">    <span class="keyword">if</span> (PrintContainerInfo) &#123;</span><br><span class="line">      tty-&gt;<span class="built_in">print_cr</span>(<span class="string">&quot;OSContainer::active_processor_count (cached): %d&quot;</span>, OSContainer::_active_processor_count);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">return</span> OSContainer::_active_processor_count;</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  cpu_count = limit_count = os::Linux::<span class="built_in">active_processor_count</span>();</span><br><span class="line">  <span class="keyword">int</span> quota  = <span class="built_in">cpu_quota</span>();</span><br><span class="line">  <span class="keyword">int</span> period = <span class="built_in">cpu_period</span>();</span><br><span class="line">  <span class="keyword">int</span> share  = <span class="built_in">cpu_shares</span>();</span><br><span class="line"></span><br><span class="line">  <span class="keyword">if</span> (quota &gt; <span class="number">-1</span> &amp;&amp; period &gt; <span class="number">0</span>) &#123;</span><br><span class="line">    quota_count = <span class="built_in">ceilf</span>((<span class="keyword">float</span>)quota / (<span class="keyword">float</span>)period);</span><br><span class="line">    <span class="keyword">if</span> (PrintContainerInfo) &#123;</span><br><span class="line">      tty-&gt;<span class="built_in">print_cr</span>(<span class="string">&quot;CPU Quota count based on quota/period: %d&quot;</span>, quota_count);</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">if</span> (share &gt; <span class="number">-1</span>) &#123;</span><br><span class="line">    share_count = <span class="built_in">ceilf</span>((<span class="keyword">float</span>)share / (<span class="keyword">float</span>)PER_CPU_SHARES);</span><br><span class="line">    <span class="keyword">if</span> (PrintContainerInfo) &#123;</span><br><span class="line">      tty-&gt;<span class="built_in">print_cr</span>(<span class="string">&quot;CPU Share count based on shares: %d&quot;</span>, share_count);</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="comment">// If both shares and quotas are setup results depend</span></span><br><span class="line">  <span class="comment">// on flag PreferContainerQuotaForCPUCount.</span></span><br><span class="line">  <span class="comment">// If true, limit CPU count to quota</span></span><br><span class="line">  <span class="comment">// If false, use minimum of shares and quotas</span></span><br><span class="line">  <span class="keyword">if</span> (quota_count !=<span class="number">0</span> &amp;&amp; share_count != <span class="number">0</span>) &#123;</span><br><span class="line">    <span class="keyword">if</span> (PreferContainerQuotaForCPUCount) &#123;</span><br><span class="line">      limit_count = quota_count;</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">      limit_count = <span class="built_in">MIN2</span>(quota_count, share_count);</span><br><span class="line">    &#125;</span><br><span class="line">  &#125; <span class="keyword">else</span> <span class="keyword">if</span> (quota_count != <span class="number">0</span>) &#123;</span><br><span class="line">    limit_count = quota_count;</span><br><span class="line">  &#125; <span class="keyword">else</span> <span class="keyword">if</span> (share_count != <span class="number">0</span>) &#123;</span><br><span class="line">    limit_count = share_count;</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  result = <span class="built_in">MIN2</span>(cpu_count, limit_count);</span><br><span class="line">  <span class="keyword">if</span> (PrintContainerInfo) &#123;</span><br><span class="line">    tty-&gt;<span class="built_in">print_cr</span>(<span class="string">&quot;OSContainer::active_processor_count: %d&quot;</span>, result);</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="comment">// Update the value and reset the cache timeout</span></span><br><span class="line">  OSContainer::_active_processor_count = result;</span><br><span class="line">  cpu-&gt;<span class="built_in">set_cache_expiry_time</span>(OSCONTAINER_CACHE_TIMEOUT);</span><br><span class="line"></span><br><span class="line">  <span class="keyword">return</span> result;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>可以发现最终的结果和很多变量有关，如果同时设置了共享和配额，则设置结果取决于在首选容器QuotaForcpUCount标志上。</p>
+<p>如果为true，则将CPU计数限制为配额，如果为false，则使用最低份额和配额。Docker可以通过-cpu-period、-cpu-quato来进行相关参数的设置，具体可以参考 <a target="_blank" rel="noopener" href="https://docs.docker.com/config/containers/resource_constraints/#cpu">Docker文档</a> 。</p>
+<p>最终结果还会和物理机的cpu核数比较来获取较小的值。</p>
+<p>内存的获取并没有什么区别，思路基本上与获取cpu的一致。</p>
+<h4 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h4><p>使用JVM参数取来限制JVM使用容器的资源，可以更好的保护JVM的运行，不会因为超过容器的限制而被Kill掉，容器Kill掉超过限制的进程也是为了保护容器不会被操作系统Kill。</p>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/blog/tags/%E9%97%AE%E9%A2%98%E6%8E%92%E6%9F%A5/" rel="tag"># 问题排查</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/blog/2021/09/02/AQS%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%E4%B9%8BCondition%E6%8E%A5%E5%8F%A3%E7%9A%84%E5%AE%9E%E7%8E%B0/" rel="prev" title="AQS源码分析之Condition接口的实现">
+      <i class="fa fa-chevron-left"></i> AQS源码分析之Condition接口的实现
+    </a></div>
+      <div class="post-nav-item"></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%87%B6%E6%89%8B%E6%98%AFDocker%EF%BC%9F"><span class="nav-number">1.</span> <span class="nav-text">凶手是Docker？</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Docker%E7%9B%B8%E5%85%B3%E7%9F%A5%E8%AF%86"><span class="nav-number">2.</span> <span class="nav-text">Docker相关知识</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E6%9B%B4%E9%AB%98%E6%95%88%E7%9A%84%E5%88%A9%E7%94%A8%E7%B3%BB%E7%BB%9F%E8%B5%84%E6%BA%90"><span class="nav-number">2.1.</span> <span class="nav-text">更高效的利用系统资源</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E6%9B%B4%E5%BF%AB%E9%80%9F%E7%9A%84%E5%90%AF%E5%8A%A8%E6%97%B6%E9%97%B4"><span class="nav-number">2.2.</span> <span class="nav-text">更快速的启动时间</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E4%B8%80%E8%87%B4%E7%9A%84%E8%BF%90%E8%A1%8C%E7%8E%AF%E5%A2%83"><span class="nav-number">2.3.</span> <span class="nav-text">一致的运行环境</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E6%8C%81%E7%BB%AD%E4%BA%A4%E4%BB%98%E5%92%8C%E9%83%A8%E7%BD%B2"><span class="nav-number">2.4.</span> <span class="nav-text">持续交付和部署</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E6%9B%B4%E8%BD%BB%E6%9D%BE%E7%9A%84%E8%BF%81%E7%A7%BB"><span class="nav-number">2.5.</span> <span class="nav-text">更轻松的迁移</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E6%9B%B4%E8%BD%BB%E6%9D%BE%E7%9A%84%E7%BB%B4%E6%8A%A4%E5%92%8C%E6%89%A9%E5%B1%95"><span class="nav-number">2.6.</span> <span class="nav-text">更轻松的维护和扩展</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#Docker%E5%AE%B9%E5%99%A8%E5%AF%B9%E6%AF%94%E8%99%9A%E6%8B%9F%E6%9C%BA%E6%80%BB%E7%BB%93"><span class="nav-number">2.7.</span> <span class="nav-text">Docker容器对比虚拟机总结</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#JVM%E5%AF%B9%E8%B5%84%E6%BA%90%E7%9A%84%E9%99%90%E5%88%B6"><span class="nav-number">2.8.</span> <span class="nav-text">JVM对资源的限制</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#CPU"><span class="nav-number">2.9.</span> <span class="nav-text">CPU</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%86%85%E5%AD%98"><span class="nav-number">2.10.</span> <span class="nav-text">内存</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E6%80%BB%E7%BB%93"><span class="nav-number">2.11.</span> <span class="nav-text">总结</span></a></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">言风</p>
+  <div class="site-description" itemprop="description">让自己更值钱，你值得更好的自己</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/blog/archives/">
+        
+          <span class="site-state-item-count">37</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+        <span class="site-state-item-count">5</span>
+        <span class="site-state-item-name">categories</span>
+      </div>
+      <div class="site-state-item site-state-tags">
+        <span class="site-state-item-count">6</span>
+        <span class="site-state-item-name">tags</span>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2022</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">言风</span>
+</div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://muse.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Muse</a>
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/blog/lib/anime.min.js"></script>
+  <script src="/blog/lib/velocity/velocity.min.js"></script>
+  <script src="/blog/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/blog/js/utils.js"></script>
+
+<script src="/blog/js/motion.js"></script>
+
+
+<script src="/blog/js/schemes/muse.js"></script>
+
+
+<script src="/blog/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>
