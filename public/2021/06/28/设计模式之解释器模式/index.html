@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.4.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/blog/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/blog/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/blog/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/blog/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/blog/css/main.css">
+
+
+<link rel="stylesheet" href="/blog/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"vqianxiao.github.io","root":"/blog/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+  </script>
+
+  <meta name="description" content="设计模式之解释器模式">
+<meta property="og:type" content="article">
+<meta property="og:title" content="设计模式之解释器模式">
+<meta property="og:url" content="https://vqianxiao.github.io/blog/2021/06/28/%E8%AE%BE%E8%AE%A1%E6%A8%A1%E5%BC%8F%E4%B9%8B%E8%A7%A3%E9%87%8A%E5%99%A8%E6%A8%A1%E5%BC%8F/index.html">
+<meta property="og:site_name" content="言风的博客">
+<meta property="og:description" content="设计模式之解释器模式">
+<meta property="og:locale" content="en_US">
+<meta property="article:published_time" content="2021-06-28T09:16:10.000Z">
+<meta property="article:modified_time" content="2021-06-28T09:16:10.000Z">
+<meta property="article:author" content="言风">
+<meta property="article:tag" content="设计模式之美">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="https://vqianxiao.github.io/blog/2021/06/28/%E8%AE%BE%E8%AE%A1%E6%A8%A1%E5%BC%8F%E4%B9%8B%E8%A7%A3%E9%87%8A%E5%99%A8%E6%A8%A1%E5%BC%8F/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'en'
+  };
+</script>
+
+  <title>设计模式之解释器模式 | 言风的博客</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/blog/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">言风的博客</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+      <p class="site-subtitle" itemprop="description">世界上并没有完美的程序，但我们并不因此而沮丧，因为写程序本来就是一个不断追求完美的过程。</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/blog/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/blog/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>Archives</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
+    <link itemprop="mainEntityOfPage" href="https://vqianxiao.github.io/blog/2021/06/28/%E8%AE%BE%E8%AE%A1%E6%A8%A1%E5%BC%8F%E4%B9%8B%E8%A7%A3%E9%87%8A%E5%99%A8%E6%A8%A1%E5%BC%8F/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/blog/images/avatar.gif">
+      <meta itemprop="name" content="言风">
+      <meta itemprop="description" content="让自己更值钱，你值得更好的自己">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="言风的博客">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          设计模式之解释器模式
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2021-06-28 17:16:10" itemprop="dateCreated datePublished" datetime="2021-06-28T17:16:10+08:00">2021-06-28</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/blog/categories/%E8%AE%BE%E8%AE%A1%E6%A8%A1%E5%BC%8F%E4%B9%8B%E7%BE%8E/" itemprop="url" rel="index"><span itemprop="name">设计模式之美</span></a>
+                </span>
+            </span>
+
+          
+            <div class="post-description">设计模式之解释器模式</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p>解释器模式，它用来描述如何构建一个简单的“语言”解释器。解释器模式更加小众，只在一些特定的领域会被用到，比如编译器、规则引擎、正则表达式。</p>
+<p>解释器模式的英文翻译是Interpreter Design Pattern。在GoF的《设计模式》中，是这样定义的：</p>
+<blockquote>
+<p>Interpreter pattern is used to defines a grammatical representation for a language and provides an interpreter to deal with this grammar.</p>
+</blockquote>
+<p>翻译成中文就是：解释器模式为某个语言定义它的语法（或者叫文法）表示，并定义一个解释器用来处理这个语法。</p>
+<p>要想了解“语言”表达的信息，就需要定义相应的语法规则。这样，书写者就可以根据语法规则来写“句子”（专业说法应该是表达式），阅读者根据语法规则来阅读“句子”，这样才能做到信息的正确传递。而解释器模式，就是用来实现根据语法规则解读“句子”的解释器。</p>
+<p>假设定义个一个新的加减乘除计算“语言”，语法规则如下：</p>
+<ul>
+<li>运算符只包含加、减、乘、除，并且没有优先级的概念</li>
+<li>表达式中，先书写数字，后书写运算符，空格隔开；</li>
+<li>按照先后顺序，取出两个数字和一个运算符计算结果，结果重新放入数字的最头部位置，循环上述过程，直到只剩下一个数字，这个数字就是表达式的最终计算结果。</li>
+</ul>
+<p>举个例子来解释下上面的语法规则。</p>
+<p>比如“ 8 3 2 4 - + * ”这样一个表达式，我们按照上面的语法规则来处理，取出数字“8 3”和“-”运算符，计算得到 5，于是表达式就变成了“ 5 2 4 + * ”。然后，我们再取出“ 5 2 ”和“ + ”运算符，计算得到 7，表达式就变成了“ 7 4 * ”。最后，我们取出“ 7 4”和“ * ”运算符，最终得到的结果就是 28。</p>
+<p>看懂了语法规则，用代码实现下。用户按照上面的规则书写表达式，传递给interpret()函数，就可以得到最终的计算结果。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">ExpressionInterpreter</span> </span>&#123;</span><br><span class="line">  <span class="keyword">private</span> Deque&lt;Long&gt; numbers = <span class="keyword">new</span> LinkedList&lt;&gt;();</span><br><span class="line"></span><br><span class="line">  <span class="function"><span class="keyword">public</span> <span class="keyword">long</span> <span class="title">interpret</span><span class="params">(String expression)</span> </span>&#123;</span><br><span class="line">    String[] elements = expression.split(<span class="string">&quot; &quot;</span>);</span><br><span class="line">    <span class="keyword">int</span> length = elements.length;</span><br><span class="line">    <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; (length+<span class="number">1</span>)/<span class="number">2</span>; ++i) &#123;</span><br><span class="line">      numbers.addLast(Long.parseLong(elements[i]));</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">for</span> (<span class="keyword">int</span> i = (length+<span class="number">1</span>)/<span class="number">2</span>; i &lt; length; ++i) &#123;</span><br><span class="line">      String operator = elements[i];</span><br><span class="line">      <span class="keyword">boolean</span> isValid = <span class="string">&quot;+&quot;</span>.equals(operator) || <span class="string">&quot;-&quot;</span>.equals(operator)</span><br><span class="line">              || <span class="string">&quot;*&quot;</span>.equals(operator) || <span class="string">&quot;/&quot;</span>.equals(operator);</span><br><span class="line">      <span class="keyword">if</span> (!isValid) &#123;</span><br><span class="line">        <span class="keyword">throw</span> <span class="keyword">new</span> RuntimeException(<span class="string">&quot;Expression is invalid: &quot;</span> + expression);</span><br><span class="line">      &#125;</span><br><span class="line"></span><br><span class="line">      <span class="keyword">long</span> number1 = numbers.pollFirst();</span><br><span class="line">      <span class="keyword">long</span> number2 = numbers.pollFirst();</span><br><span class="line">      <span class="keyword">long</span> result = <span class="number">0</span>;</span><br><span class="line">      <span class="keyword">if</span> (operator.equals(<span class="string">&quot;+&quot;</span>)) &#123;</span><br><span class="line">        result = number1 + number2;</span><br><span class="line">      &#125; <span class="keyword">else</span> <span class="keyword">if</span> (operator.equals(<span class="string">&quot;-&quot;</span>)) &#123;</span><br><span class="line">        result = number1 - number2;</span><br><span class="line">      &#125; <span class="keyword">else</span> <span class="keyword">if</span> (operator.equals(<span class="string">&quot;*&quot;</span>)) &#123;</span><br><span class="line">        result = number1 * number2;</span><br><span class="line">      &#125; <span class="keyword">else</span> <span class="keyword">if</span> (operator.equals(<span class="string">&quot;/&quot;</span>)) &#123;</span><br><span class="line">        result = number1 / number2;</span><br><span class="line">      &#125;</span><br><span class="line">      numbers.addFirst(result);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (numbers.size() != <span class="number">1</span>) &#123;</span><br><span class="line">      <span class="keyword">throw</span> <span class="keyword">new</span> RuntimeException(<span class="string">&quot;Expression is invalid: &quot;</span> + expression);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">return</span> numbers.pop();</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>上面的代码实现中，语法规则的解析都集中在一个函数中，对于简单的语法规则的解析，这样的设计就足够了。但是对于复杂的语法规则的解析，逻辑复杂，代码量多，所有的解析逻辑都耦合在一个函数中，这样显然是不合适的。这个时候，就需要考虑拆分代码，将解析逻辑拆分到独立的小类中。</p>
+<p>解释器模式的代码实现比较灵活，没有固定的模板。可以将语法解析的工作拆分到各个小类中，以此来避免大而全的解析类。一般的做法是，将语法规则拆分成一些小的独立的单元，然后对每个单元进行解析，最终合并为对整个语法规则的解析。</p>
+<p>前面的语法规则有两类表达式，一类是数字，一类是运算符，运算符又包括加减乘除，利用解释器模式，可以把解析的工作拆分到NumberExpression、AdditionExpression、SubstractionExpression、MultipicationExpression、DivisionExpression这样五个解析类中。</p>
+<p>按照这个思路，对代码进行重构。加减乘除解析比较简单，利用解释器模式的设计思路，有点过度设计，主要是为了解释原理。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">interface</span> <span class="title">Expression</span> </span>&#123;</span><br><span class="line">  <span class="function"><span class="keyword">long</span> <span class="title">interpret</span><span class="params">()</span></span>;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">NumberExpression</span> <span class="keyword">implements</span> <span class="title">Expression</span> </span>&#123;</span><br><span class="line">  <span class="keyword">private</span> <span class="keyword">long</span> number;</span><br><span class="line"></span><br><span class="line">  <span class="function"><span class="keyword">public</span> <span class="title">NumberExpression</span><span class="params">(<span class="keyword">long</span> number)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">this</span>.number = number;</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="function"><span class="keyword">public</span> <span class="title">NumberExpression</span><span class="params">(String number)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">this</span>.number = Long.parseLong(number);</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="meta">@Override</span></span><br><span class="line">  <span class="function"><span class="keyword">public</span> <span class="keyword">long</span> <span class="title">interpret</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    <span class="keyword">return</span> <span class="keyword">this</span>.number;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">AdditionExpression</span> <span class="keyword">implements</span> <span class="title">Expression</span> </span>&#123;</span><br><span class="line">  <span class="keyword">private</span> Expression exp1;</span><br><span class="line">  <span class="keyword">private</span> Expression exp2;</span><br><span class="line"></span><br><span class="line">  <span class="function"><span class="keyword">public</span> <span class="title">AdditionExpression</span><span class="params">(Expression exp1, Expression exp2)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">this</span>.exp1 = exp1;</span><br><span class="line">    <span class="keyword">this</span>.exp2 = exp2;</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="meta">@Override</span></span><br><span class="line">  <span class="function"><span class="keyword">public</span> <span class="keyword">long</span> <span class="title">interpret</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    <span class="keyword">return</span> exp1.interpret() + exp2.interpret();</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br><span class="line"><span class="comment">// SubstractionExpression/MultiplicationExpression/DivisionExpression与AdditionExpression代码结构类似，这里就省略了</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">ExpressionInterpreter</span> </span>&#123;</span><br><span class="line">  <span class="keyword">private</span> Deque&lt;Expression&gt; numbers = <span class="keyword">new</span> LinkedList&lt;&gt;();</span><br><span class="line"></span><br><span class="line">  <span class="function"><span class="keyword">public</span> <span class="keyword">long</span> <span class="title">interpret</span><span class="params">(String expression)</span> </span>&#123;</span><br><span class="line">    String[] elements = expression.split(<span class="string">&quot; &quot;</span>);</span><br><span class="line">    <span class="keyword">int</span> length = elements.length;</span><br><span class="line">    <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; (length+<span class="number">1</span>)/<span class="number">2</span>; ++i) &#123;</span><br><span class="line">      numbers.addLast(<span class="keyword">new</span> NumberExpression(elements[i]));</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">for</span> (<span class="keyword">int</span> i = (length+<span class="number">1</span>)/<span class="number">2</span>; i &lt; length; ++i) &#123;</span><br><span class="line">      String operator = elements[i];</span><br><span class="line">      <span class="keyword">boolean</span> isValid = <span class="string">&quot;+&quot;</span>.equals(operator) || <span class="string">&quot;-&quot;</span>.equals(operator)</span><br><span class="line">              || <span class="string">&quot;*&quot;</span>.equals(operator) || <span class="string">&quot;/&quot;</span>.equals(operator);</span><br><span class="line">      <span class="keyword">if</span> (!isValid) &#123;</span><br><span class="line">        <span class="keyword">throw</span> <span class="keyword">new</span> RuntimeException(<span class="string">&quot;Expression is invalid: &quot;</span> + expression);</span><br><span class="line">      &#125;</span><br><span class="line"></span><br><span class="line">      Expression exp1 = numbers.pollFirst();</span><br><span class="line">      Expression exp2 = numbers.pollFirst();</span><br><span class="line">      Expression combinedExp = <span class="keyword">null</span>;</span><br><span class="line">      <span class="keyword">if</span> (operator.equals(<span class="string">&quot;+&quot;</span>)) &#123;</span><br><span class="line">        combinedExp = <span class="keyword">new</span> AdditionExpression(exp1, exp2);</span><br><span class="line">      &#125; <span class="keyword">else</span> <span class="keyword">if</span> (operator.equals(<span class="string">&quot;-&quot;</span>)) &#123;</span><br><span class="line">        combinedExp = <span class="keyword">new</span> AdditionExpression(exp1, exp2);</span><br><span class="line">      &#125; <span class="keyword">else</span> <span class="keyword">if</span> (operator.equals(<span class="string">&quot;*&quot;</span>)) &#123;</span><br><span class="line">        combinedExp = <span class="keyword">new</span> AdditionExpression(exp1, exp2);</span><br><span class="line">      &#125; <span class="keyword">else</span> <span class="keyword">if</span> (operator.equals(<span class="string">&quot;/&quot;</span>)) &#123;</span><br><span class="line">        combinedExp = <span class="keyword">new</span> AdditionExpression(exp1, exp2);</span><br><span class="line">      &#125;</span><br><span class="line">      <span class="keyword">long</span> result = combinedExp.interpret();</span><br><span class="line">      numbers.addFirst(<span class="keyword">new</span> NumberExpression(result));</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (numbers.size() != <span class="number">1</span>) &#123;</span><br><span class="line">      <span class="keyword">throw</span> <span class="keyword">new</span> RuntimeException(<span class="string">&quot;Expression is invalid: &quot;</span> + expression);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">return</span> numbers.pop().interpret();</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>解释器实战</p>
+<p>在我们平时的项目开发中，监控系统非常重要，它可以时刻监控业务系统的运行情况，及时将异常报告给开发者。一般来讲，监控系统支持开发者自定义告警规则，比如，我们可以用一个表达式来表示一个告警规则。它表达的意思是：每分钟API总出错数超过100或者每分钟或者每分钟API总调用数超过10000就触发告警。</p>
+<blockquote>
+<p>api_error_per_minute &gt; 100 || api_count_per_minute &gt; 10000    </p>
+</blockquote>
+<p>在监控系统中，告警模块只负责根据统计数据和告警规则，判断是否触发告警。至于每分钟API接口出错数、每分钟接口调用数等统计数据的计算，是由其他模块来负责的。其他模块将统计数据放到一个Map中（数据的格式如下），发送给告警模块，接下来，只关注告警模块。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">Map&lt;String, Long&gt; apiStat = <span class="keyword">new</span> HashMap&lt;&gt;();</span><br><span class="line">apiStat.put(<span class="string">&quot;api_error_per_minute&quot;</span>, <span class="number">103</span>);</span><br><span class="line">apiStat.put(<span class="string">&quot;api_count_per_minute&quot;</span>, <span class="number">987</span>);</span><br></pre></td></tr></table></figure>
+
+<p>为了简化讲解和代码实现，假设自定义的告警规则只包含“||、&amp;&amp;、&gt;、&lt;、==”这五个运算符，其中，“&gt;、&lt;、==”运算符的优先级高于“||、&amp;&amp;”运算符，“&amp;&amp;”运算符优先级高于“||”。在表达式中，任意元素之间需要通过空格来分隔。除此之外，用户可以自定义要监控的 key，比如前面的 api_error_per_minute、api_count_per_minute。</p>
+<p>把自定义的告警规则，看作一种特殊的“语言”语法规则。实现一个解释器，就能够根据规则，针对用户输入的数据，判断是否触发告警。利用解释器模式，把解析表达式的逻辑拆分到各个小类中，避免大而复杂的大类的出现。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">interface</span> <span class="title">Expression</span> </span>&#123;</span><br><span class="line">  <span class="function"><span class="keyword">boolean</span> <span class="title">interpret</span><span class="params">(Map&lt;String, Long&gt; stats)</span></span>;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">GreaterExpression</span> <span class="keyword">implements</span> <span class="title">Expression</span> </span>&#123;</span><br><span class="line">  <span class="keyword">private</span> String key;</span><br><span class="line">  <span class="keyword">private</span> <span class="keyword">long</span> value;</span><br><span class="line"></span><br><span class="line">  <span class="function"><span class="keyword">public</span> <span class="title">GreaterExpression</span><span class="params">(String strExpression)</span> </span>&#123;</span><br><span class="line">    String[] elements = strExpression.trim().split(<span class="string">&quot;\\s+&quot;</span>);</span><br><span class="line">    <span class="keyword">if</span> (elements.length != <span class="number">3</span> || !elements[<span class="number">1</span>].trim().equals(<span class="string">&quot;&gt;&quot;</span>)) &#123;</span><br><span class="line">      <span class="keyword">throw</span> <span class="keyword">new</span> RuntimeException(<span class="string">&quot;Expression is invalid: &quot;</span> + strExpression);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">this</span>.key = elements[<span class="number">0</span>].trim();</span><br><span class="line">    <span class="keyword">this</span>.value = Long.parseLong(elements[<span class="number">2</span>].trim());</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="function"><span class="keyword">public</span> <span class="title">GreaterExpression</span><span class="params">(String key, <span class="keyword">long</span> value)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">this</span>.key = key;</span><br><span class="line">    <span class="keyword">this</span>.value = value;</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="meta">@Override</span></span><br><span class="line">  <span class="function"><span class="keyword">public</span> <span class="keyword">boolean</span> <span class="title">interpret</span><span class="params">(Map&lt;String, Long&gt; stats)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">if</span> (!stats.containsKey(key)) &#123;</span><br><span class="line">      <span class="keyword">return</span> <span class="keyword">false</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">long</span> statValue = stats.get(key);</span><br><span class="line">    <span class="keyword">return</span> statValue &gt; value;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// LessExpression/EqualExpression跟GreaterExpression代码类似，这里就省略了</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">AndExpression</span> <span class="keyword">implements</span> <span class="title">Expression</span> </span>&#123;</span><br><span class="line">  <span class="keyword">private</span> List&lt;Expression&gt; expressions = <span class="keyword">new</span> ArrayList&lt;&gt;();</span><br><span class="line"></span><br><span class="line">  <span class="function"><span class="keyword">public</span> <span class="title">AndExpression</span><span class="params">(String strAndExpression)</span> </span>&#123;</span><br><span class="line">    String[] strExpressions = strAndExpression.split(<span class="string">&quot;&amp;&amp;&quot;</span>);</span><br><span class="line">    <span class="keyword">for</span> (String strExpr : strExpressions) &#123;</span><br><span class="line">      <span class="keyword">if</span> (strExpr.contains(<span class="string">&quot;&gt;&quot;</span>)) &#123;</span><br><span class="line">        expressions.add(<span class="keyword">new</span> GreaterExpression(strExpr));</span><br><span class="line">      &#125; <span class="keyword">else</span> <span class="keyword">if</span> (strExpr.contains(<span class="string">&quot;&lt;&quot;</span>)) &#123;</span><br><span class="line">        expressions.add(<span class="keyword">new</span> LessExpression(strExpr));</span><br><span class="line">      &#125; <span class="keyword">else</span> <span class="keyword">if</span> (strExpr.contains(<span class="string">&quot;==&quot;</span>)) &#123;</span><br><span class="line">        expressions.add(<span class="keyword">new</span> EqualExpression(strExpr));</span><br><span class="line">      &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">        <span class="keyword">throw</span> <span class="keyword">new</span> RuntimeException(<span class="string">&quot;Expression is invalid: &quot;</span> + strAndExpression);</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="function"><span class="keyword">public</span> <span class="title">AndExpression</span><span class="params">(List&lt;Expression&gt; expressions)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">this</span>.expressions.addAll(expressions);</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="meta">@Override</span></span><br><span class="line">  <span class="function"><span class="keyword">public</span> <span class="keyword">boolean</span> <span class="title">interpret</span><span class="params">(Map&lt;String, Long&gt; stats)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">for</span> (Expression expr : expressions) &#123;</span><br><span class="line">      <span class="keyword">if</span> (!expr.interpret(stats)) &#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">false</span>;</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> <span class="keyword">true</span>;</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">OrExpression</span> <span class="keyword">implements</span> <span class="title">Expression</span> </span>&#123;</span><br><span class="line">  <span class="keyword">private</span> List&lt;Expression&gt; expressions = <span class="keyword">new</span> ArrayList&lt;&gt;();</span><br><span class="line"></span><br><span class="line">  <span class="function"><span class="keyword">public</span> <span class="title">OrExpression</span><span class="params">(String strOrExpression)</span> </span>&#123;</span><br><span class="line">    String[] andExpressions = strOrExpression.split(<span class="string">&quot;\\|\\|&quot;</span>);</span><br><span class="line">    <span class="keyword">for</span> (String andExpr : andExpressions) &#123;</span><br><span class="line">      expressions.add(<span class="keyword">new</span> AndExpression(andExpr));</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="function"><span class="keyword">public</span> <span class="title">OrExpression</span><span class="params">(List&lt;Expression&gt; expressions)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">this</span>.expressions.addAll(expressions);</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="meta">@Override</span></span><br><span class="line">  <span class="function"><span class="keyword">public</span> <span class="keyword">boolean</span> <span class="title">interpret</span><span class="params">(Map&lt;String, Long&gt; stats)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">for</span> (Expression expr : expressions) &#123;</span><br><span class="line">      <span class="keyword">if</span> (expr.interpret(stats)) &#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">true</span>;</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> <span class="keyword">false</span>;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">AlertRuleInterpreter</span> </span>&#123;</span><br><span class="line">  <span class="keyword">private</span> Expression expression;</span><br><span class="line"></span><br><span class="line">  <span class="function"><span class="keyword">public</span> <span class="title">AlertRuleInterpreter</span><span class="params">(String ruleExpression)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">this</span>.expression = <span class="keyword">new</span> OrExpression(ruleExpression);</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="function"><span class="keyword">public</span> <span class="keyword">boolean</span> <span class="title">interpret</span><span class="params">(Map&lt;String, Long&gt; stats)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">return</span> expression.interpret(stats);</span><br><span class="line">  &#125;</span><br><span class="line">&#125; </span><br></pre></td></tr></table></figure>
+
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/blog/tags/%E8%AE%BE%E8%AE%A1%E6%A8%A1%E5%BC%8F%E4%B9%8B%E7%BE%8E/" rel="tag"># 设计模式之美</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/blog/2021/06/25/%E8%AE%BE%E8%AE%A1%E6%A8%A1%E5%BC%8F%E4%B9%8B%E5%91%BD%E4%BB%A4%E6%A8%A1%E5%BC%8F/" rel="prev" title="设计模式之命令模式">
+      <i class="fa fa-chevron-left"></i> 设计模式之命令模式
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/blog/2021/06/29/%E8%AE%BE%E8%AE%A1%E6%A8%A1%E5%BC%8F%E4%B9%8B%E4%B8%AD%E4%BB%8B%E6%A8%A1%E5%BC%8F/" rel="next" title="设计模式之中介模式">
+      设计模式之中介模式 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">言风</p>
+  <div class="site-description" itemprop="description">让自己更值钱，你值得更好的自己</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/blog/archives/">
+        
+          <span class="site-state-item-count">39</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+        <span class="site-state-item-count">6</span>
+        <span class="site-state-item-name">categories</span>
+      </div>
+      <div class="site-state-item site-state-tags">
+        <span class="site-state-item-count">7</span>
+        <span class="site-state-item-name">tags</span>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2024</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">言风</span>
+</div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://muse.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Muse</a>
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/blog/lib/anime.min.js"></script>
+  <script src="/blog/lib/velocity/velocity.min.js"></script>
+  <script src="/blog/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/blog/js/utils.js"></script>
+
+<script src="/blog/js/motion.js"></script>
+
+
+<script src="/blog/js/schemes/muse.js"></script>
+
+
+<script src="/blog/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

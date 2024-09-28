@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.4.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/blog/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/blog/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/blog/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/blog/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/blog/css/main.css">
+
+
+<link rel="stylesheet" href="/blog/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"vqianxiao.github.io","root":"/blog/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+  </script>
+
+  <meta name="description" content="设计原则">
+<meta property="og:type" content="article">
+<meta property="og:title" content="设计原则">
+<meta property="og:url" content="https://vqianxiao.github.io/blog/2021/05/29/%E8%AE%BE%E8%AE%A1%E5%8E%9F%E5%88%99%E4%B8%8E%E6%80%9D%E6%83%B3-%E8%AE%BE%E8%AE%A1%E5%8E%9F%E5%88%99/index.html">
+<meta property="og:site_name" content="言风的博客">
+<meta property="og:description" content="设计原则">
+<meta property="og:locale" content="en_US">
+<meta property="article:published_time" content="2021-05-29T05:26:10.000Z">
+<meta property="article:modified_time" content="2021-05-29T05:26:10.000Z">
+<meta property="article:author" content="言风">
+<meta property="article:tag" content="设计模式之美">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="https://vqianxiao.github.io/blog/2021/05/29/%E8%AE%BE%E8%AE%A1%E5%8E%9F%E5%88%99%E4%B8%8E%E6%80%9D%E6%83%B3-%E8%AE%BE%E8%AE%A1%E5%8E%9F%E5%88%99/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'en'
+  };
+</script>
+
+  <title>设计原则 | 言风的博客</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/blog/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">言风的博客</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+      <p class="site-subtitle" itemprop="description">世界上并没有完美的程序，但我们并不因此而沮丧，因为写程序本来就是一个不断追求完美的过程。</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/blog/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/blog/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>Archives</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
+    <link itemprop="mainEntityOfPage" href="https://vqianxiao.github.io/blog/2021/05/29/%E8%AE%BE%E8%AE%A1%E5%8E%9F%E5%88%99%E4%B8%8E%E6%80%9D%E6%83%B3-%E8%AE%BE%E8%AE%A1%E5%8E%9F%E5%88%99/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/blog/images/avatar.gif">
+      <meta itemprop="name" content="言风">
+      <meta itemprop="description" content="让自己更值钱，你值得更好的自己">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="言风的博客">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          设计原则
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2021-05-29 13:26:10" itemprop="dateCreated datePublished" datetime="2021-05-29T13:26:10+08:00">2021-05-29</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/blog/categories/%E8%AE%BE%E8%AE%A1%E6%A8%A1%E5%BC%8F%E4%B9%8B%E7%BE%8E/" itemprop="url" rel="index"><span itemprop="name">设计模式之美</span></a>
+                </span>
+            </span>
+
+          
+            <div class="post-description">设计原则</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h2 id="单一职责原则"><a href="#单一职责原则" class="headerlink" title="单一职责原则"></a>单一职责原则</h2><h3 id="理解"><a href="#理解" class="headerlink" title="理解"></a>理解</h3><p>一个类只负责完成一个职责或者功能。不要设计大而全的类，要设计粒度小、功能单一的类。</p>
+<h3 id="如何判断是否足够单一"><a href="#如何判断是否足够单一" class="headerlink" title="如何判断是否足够单一"></a>如何判断是否足够单一</h3><p>结合具体的应用场景。可以先写一个粗力度的类，满足业务需求。随着业务发展，如果粗力度的类越来越庞大，代码越来越多，就可以把这个粗粒度的类拆分成几个更细粒度的类。这就是所谓的持续重构。</p>
+<p>总结了几条判断原则：</p>
+<ul>
+<li>类中的代码行数、函数或属性过多，会影响代码的可读性和可维护性，我们就需要考虑对类进行拆分</li>
+<li>类依赖的其他类过多，或者依赖类的其他类过多，不符合高内聚、低耦合的设计思想，我们就需要考虑对类进行拆分</li>
+<li>私有方法过多，我们就要考虑是否能将私有方法独立到新的类中，设置为public方法，供更多的类使用，从而提高代码的复用性</li>
+<li>比较难给类起一个合适的名字，很难用一个业务名词概括，或者只能用一些笼统的Manager、Context之类的词语来命名，这就说明类的职责定义得可能不够清晰</li>
+<li>类中大量的方法都是集中操作类中的某几个属性，就可以考虑将这几个属性和对应的方法拆分出来。</li>
+</ul>
+<h3 id="类的职责是否设计得越单一越好"><a href="#类的职责是否设计得越单一越好" class="headerlink" title="类的职责是否设计得越单一越好"></a>类的职责是否设计得越单一越好</h3><p>如果拆分的过细，实际上会适得其反，会降低内聚性，也会影响代码的可维护性。</p>
+<h2 id="开闭原则"><a href="#开闭原则" class="headerlink" title="开闭原则"></a>开闭原则</h2><p><strong>理解</strong></p>
+<p>添加一个新的功能是在已有代码基础上扩展代码（新增模块、类、方法等）而非修改已有代码（修改模块、类、方法等）。开闭原则并不是说完全杜绝修改，而是以最小的修改代码的代价来完成新功能的开发。同样的代码改动，修改和扩展在不同代码粒度下可能为修改和扩展，不必太过纠结。</p>
+<p><strong>完全不修改？</strong></p>
+<p>添加一个新功能，不可能任何模块、类、方法的代码都不“修改”，这个是做不到的。类需要创建、组装、做一些初始化操作，才能构建成可运行的程序，这部分代码的修改是在所难免的。我们要做的是尽量让修改操作更集中、更少、更上层，尽量让最核心、最复杂的那部分逻辑代码满足开闭原则。</p>
+<p><strong>如何做到对扩展开放，对修改关闭</strong></p>
+<p>思想，为了尽量写出扩展性好的代码，要时刻具备扩展意识、抽象意识、封装意识。这些“潜意识”可能比任何开发技巧都重要。</p>
+<p>写代码的时候，多花时间往前多思考一下，这段代码未来可能有哪些需求变更、如何设计代码结构，实现留好扩展点，以便在需求变更的时候，不需要改动代码整体结构、做到最小代码改动的情况下，新的代码能够很灵活的插入到扩展点上。在识别出代码可变部分和不可变部分后，将可变部分封装起来，隔离变化，提供抽象化的不可变接口，给上层系统使用。当具体的实现发生变化的时候，我们呢只需要基于相同的抽象接口，扩展一个新的实现，替换掉老的实现即可，上游系统的代码几乎不需要修改。</p>
+<p>常用来提高代码扩展性的方法有：多态、依赖注入、基于接口而非实现编程</p>
+<p><strong>项目中如何应用开闭原则</strong></p>
+<p>对于一些确定的、短期内可能就会扩展，或者需求改动对代码结构影响比较大的情况，或者实现成本不高的扩展点，在编写代码的时候，我们就可以实现做些扩展性设计。但对于一些不确定未来是否要支持的需求，或者实现起来比较复杂的扩展点，我们可以等到有需求驱动的时候，在通过重构代码的方式来支持扩展的需求。</p>
+<h2 id="里氏替换原则"><a href="#里氏替换原则" class="headerlink" title="里氏替换原则"></a>里氏替换原则</h2><p><strong>如何理解</strong></p>
+<p>子类对象能够替换程序中父类对象出现的任何地方，并且保证原来程序的逻辑行为不变及正确性不被破坏。</p>
+<p><strong>与多态的区别</strong></p>
+<p>多态是面向对象的一大特性，也是面向对象编程语言的一种语法。</p>
+<p>里氏替换原则是一种设计原则，是用来指导继承关系中子类该如何设计，子类的设计要保证在替换父类的时候，不改变原有程序的逻辑以及不破坏程序的正确性。</p>
+<p><strong>不符合里氏替换原则的例子</strong></p>
+<p>1.子类违背父类声明要实现的功能</p>
+<p>2.子类违背父类对输入、输出、异常的约定</p>
+<p>3.子类违背父类注释中所罗列的任何特殊说明</p>
+<h2 id="接口隔离原则"><a href="#接口隔离原则" class="headerlink" title="接口隔离原则"></a>接口隔离原则</h2><p><strong>理解</strong></p>
+<p>调用者不应该被强迫依赖它不需要的接口。</p>
+<p><strong>一组API接口集合</strong></p>
+<p>可以是某个微服务的接口，也可以是某个类库的接口。在设计微服务或者类库接口的时候，如果部分接口只被部分调用者使用，那就需要将这部分接口隔离出来，单独给对应的调用者使用，而不是强迫其他调用者也依赖这部分不会用到的接口。</p>
+<p><strong>单个接口或函数</strong></p>
+<p>其实这样理解和单一职责有点相似，但是单一职责针对类、模块、接口的设计。接口隔离原则通过调用者如何使用接口来间接的判定，如果调用者只使用部分功能，那接口的设计就不够职责单一。</p>
+<p><strong>OOP中的接口</strong></p>
+<p>就是面向对象编程语言中的接口。接口设计要尽量单一，不要让接口的实现类和调用者，依赖不需要的接口函数。</p>
+<h2 id="提高代码的复用性"><a href="#提高代码的复用性" class="headerlink" title="提高代码的复用性"></a>提高代码的复用性</h2><p>1.减少代码耦合</p>
+<p>对于高度耦合的代码，当我们想复用其中一个功能，想把这个功能的代码抽取出来成为一个独立的模块、类或者函数的时候，往往会发现牵一发而动全身。所以，高耦合的代码会影响到代码的复用性，我们要尽量减少代码耦合。</p>
+<p>2.满足单一职责</p>
+<p>职责不够单一，模块、类设计得大而全，那依赖它的代码或者它依赖的代码会比较多，进而增加了代码的耦合。细粒度的代码，代码的通用型会越好，越容易被复用。</p>
+<p>3.模块化</p>
+<p>模块不单指一组类构成的模块，还可以理解为单个类，函数。要善于将功能独立的代码，封装成模块。独立的模块就像一块一块的积木，更加容易复用，可以直接拿来搭建更加复杂的系统。</p>
+<p>4.业务与非业务分离</p>
+<p>越是和业务无关的代码越容易复用，越是针对特定业务的代码越难复用。所以为了复用和业务无关的代码，我们将业务和非业务逻辑代码分离，抽取成一些通用的框架、类库、组件等。</p>
+<p>5.通用代码下沉</p>
+<p>从分层的角度看，越底层的代码越通用、会被越多的模块调用，越应该设计的足够可复用。进行代码分层后，为了避免交叉调用导致关系混乱，我们只允许上层调用下层代码以及用层之间的调用，杜绝下层调用上层代码，所以通用代码我们尽量下沉到更下层。</p>
+<p>6.封装、多态、抽象、封装</p>
+<p>利用继承，可以讲公共的代码抽取到父类，子类复用父类的属性和方法。利用多态，可以动态的替换一段代码的部分逻辑，让这段代码可复用。抽象和封装，越抽象越不依赖具体的实现，越容易复用。代码封装成模块，隐藏可变的细节、暴露不变的接口，越容易复用。</p>
+<p>7.应用模版等设计模式</p>
+<p>一些设计模式也能提高代码的复用性，模版模式利用了多态来实现，可以灵活地替换其中的部分代码，整个流程模版可复用。</p>
+<h2 id="迪米特法则"><a href="#迪米特法则" class="headerlink" title="迪米特法则"></a>迪米特法则</h2><p>最小知识原则，The Least Knowledge Principle。不应该有直接依赖关系的类之间，不要有依赖。有依赖关系的类之间，尽量只依赖必要的接口。</p>
+<h3 id="实战思考"><a href="#实战思考" class="headerlink" title="实战思考"></a>实战思考</h3><p>1.业务系统的开发</p>
+<p>学会借鉴，可以通过线框图和用户用例来细化业务流程，挖掘一些比较细节的、不容易想到的功能点。面向对象设计主要聚焦在代码层面（主要针对类），系统设计就是聚焦在架构层面（主要针对模块）。类比面向对象设计，系统设计就是把合适的功能放到合适的模块中。合理地划分模块也可以做到模块层面的高内聚、低耦合，架构整洁清晰。类设计好之后，我们需要设计类之间的交互关系。类比到系统设计，系统职责划分好之后，接下来就是设计系统之间的交互。</p>
+<p>2.非业务的通用框架开发</p>
+<p>在做非业务通用框架的开发，在做需求分析的时候，除了功能性需求分析之外，还需要考虑框架的非功能性需求。比如框架的易用性、性能、扩展性、容错性、通用性等。</p>
+<p>在设计时，可以通过画产品线框图，聚焦简单应用场景，设计实现最小原型，画系统设计图来让问题简化、具体、明确，提供一个迭代设计开发的基础，逐步推进。</p>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/blog/tags/%E8%AE%BE%E8%AE%A1%E6%A8%A1%E5%BC%8F%E4%B9%8B%E7%BE%8E/" rel="tag"># 设计模式之美</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/blog/2021/05/25/%E8%AE%BE%E8%AE%A1%E6%A8%A1%E5%BC%8F%E4%B9%8B%E8%A3%85%E9%A5%B0%E5%99%A8%E6%A8%A1%E5%BC%8F/" rel="prev" title="设计模式之装饰器模式">
+      <i class="fa fa-chevron-left"></i> 设计模式之装饰器模式
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/blog/2021/05/29/JVM%E6%80%8E%E4%B9%88%E5%88%A4%E6%96%AD%E5%AF%B9%E8%B1%A1%E5%B7%B2%E7%BB%8F%E6%AD%BB%E4%BA%86/" rel="next" title="JVM怎么判断对象已经死了">
+      JVM怎么判断对象已经死了 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%8D%95%E4%B8%80%E8%81%8C%E8%B4%A3%E5%8E%9F%E5%88%99"><span class="nav-number">1.</span> <span class="nav-text">单一职责原则</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%90%86%E8%A7%A3"><span class="nav-number">1.1.</span> <span class="nav-text">理解</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%A6%82%E4%BD%95%E5%88%A4%E6%96%AD%E6%98%AF%E5%90%A6%E8%B6%B3%E5%A4%9F%E5%8D%95%E4%B8%80"><span class="nav-number">1.2.</span> <span class="nav-text">如何判断是否足够单一</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%B1%BB%E7%9A%84%E8%81%8C%E8%B4%A3%E6%98%AF%E5%90%A6%E8%AE%BE%E8%AE%A1%E5%BE%97%E8%B6%8A%E5%8D%95%E4%B8%80%E8%B6%8A%E5%A5%BD"><span class="nav-number">1.3.</span> <span class="nav-text">类的职责是否设计得越单一越好</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%BC%80%E9%97%AD%E5%8E%9F%E5%88%99"><span class="nav-number">2.</span> <span class="nav-text">开闭原则</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E9%87%8C%E6%B0%8F%E6%9B%BF%E6%8D%A2%E5%8E%9F%E5%88%99"><span class="nav-number">3.</span> <span class="nav-text">里氏替换原则</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%8E%A5%E5%8F%A3%E9%9A%94%E7%A6%BB%E5%8E%9F%E5%88%99"><span class="nav-number">4.</span> <span class="nav-text">接口隔离原则</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%8F%90%E9%AB%98%E4%BB%A3%E7%A0%81%E7%9A%84%E5%A4%8D%E7%94%A8%E6%80%A7"><span class="nav-number">5.</span> <span class="nav-text">提高代码的复用性</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E8%BF%AA%E7%B1%B3%E7%89%B9%E6%B3%95%E5%88%99"><span class="nav-number">6.</span> <span class="nav-text">迪米特法则</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%AE%9E%E6%88%98%E6%80%9D%E8%80%83"><span class="nav-number">6.1.</span> <span class="nav-text">实战思考</span></a></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">言风</p>
+  <div class="site-description" itemprop="description">让自己更值钱，你值得更好的自己</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/blog/archives/">
+        
+          <span class="site-state-item-count">39</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+        <span class="site-state-item-count">6</span>
+        <span class="site-state-item-name">categories</span>
+      </div>
+      <div class="site-state-item site-state-tags">
+        <span class="site-state-item-count">7</span>
+        <span class="site-state-item-name">tags</span>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2024</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">言风</span>
+</div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://muse.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Muse</a>
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/blog/lib/anime.min.js"></script>
+  <script src="/blog/lib/velocity/velocity.min.js"></script>
+  <script src="/blog/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/blog/js/utils.js"></script>
+
+<script src="/blog/js/motion.js"></script>
+
+
+<script src="/blog/js/schemes/muse.js"></script>
+
+
+<script src="/blog/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

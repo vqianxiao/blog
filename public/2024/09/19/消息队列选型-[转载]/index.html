@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.4.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/blog/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/blog/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/blog/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/blog/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/blog/css/main.css">
+
+
+<link rel="stylesheet" href="/blog/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"vqianxiao.github.io","root":"/blog/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+  </script>
+
+  <meta name="description" content="消息队列选型">
+<meta property="og:type" content="article">
+<meta property="og:title" content="消息队列选型(转载)">
+<meta property="og:url" content="https://vqianxiao.github.io/blog/2024/09/19/%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97%E9%80%89%E5%9E%8B-[%E8%BD%AC%E8%BD%BD]/index.html">
+<meta property="og:site_name" content="言风的博客">
+<meta property="og:description" content="消息队列选型">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="https://vqianxiao.github.io/blog/images/mq/mq1.png">
+<meta property="og:image" content="https://vqianxiao.github.io/blog/images/mq/mq2.png">
+<meta property="og:image" content="https://vqianxiao.github.io/blog/images/mq/mq3.png">
+<meta property="og:image" content="https://vqianxiao.github.io/blog/images/mq/mq4.png">
+<meta property="og:image" content="https://vqianxiao.github.io/blog/images/mq/mq5.png">
+<meta property="og:image" content="https://vqianxiao.github.io/blog/images/mq/mq6.png">
+<meta property="og:image" content="https://vqianxiao.github.io/blog/images/mq/mq7.png">
+<meta property="og:image" content="https://vqianxiao.github.io/blog/images/mq/mq8.png">
+<meta property="og:image" content="https://vqianxiao.github.io/blog/images/mq/mq9.png">
+<meta property="og:image" content="https://vqianxiao.github.io/blog/images/mq/mq10.png">
+<meta property="article:published_time" content="2024-09-19T15:11:10.000Z">
+<meta property="article:modified_time" content="2024-09-19T15:11:10.000Z">
+<meta property="article:author" content="言风">
+<meta property="article:tag" content="消息队列">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://vqianxiao.github.io/blog/images/mq/mq1.png">
+
+<link rel="canonical" href="https://vqianxiao.github.io/blog/2024/09/19/%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97%E9%80%89%E5%9E%8B-[%E8%BD%AC%E8%BD%BD]/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'en'
+  };
+</script>
+
+  <title>消息队列选型(转载) | 言风的博客</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/blog/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">言风的博客</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+      <p class="site-subtitle" itemprop="description">世界上并没有完美的程序，但我们并不因此而沮丧，因为写程序本来就是一个不断追求完美的过程。</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/blog/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/blog/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>Archives</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
+    <link itemprop="mainEntityOfPage" href="https://vqianxiao.github.io/blog/2024/09/19/%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97%E9%80%89%E5%9E%8B-[%E8%BD%AC%E8%BD%BD]/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/blog/images/avatar.gif">
+      <meta itemprop="name" content="言风">
+      <meta itemprop="description" content="让自己更值钱，你值得更好的自己">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="言风的博客">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          消息队列选型(转载)
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2024-09-19 23:11:10" itemprop="dateCreated datePublished" datetime="2024-09-19T23:11:10+08:00">2024-09-19</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/blog/categories/%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/" itemprop="url" rel="index"><span itemprop="name">消息队列</span></a>
+                </span>
+            </span>
+
+          
+            <div class="post-description">消息队列选型</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p>作者：emoryliang</p>
+<p>原文地址<br><a target="_blank" rel="noopener" href="https://mp.weixin.qq.com/s/jWKHAic4Tt4Ohsj4pTmYFw">https://mp.weixin.qq.com/s/jWKHAic4Tt4Ohsj4pTmYFw</a></p>
+<blockquote>
+</blockquote>
+<p>消息队列是重要的分布式系统组件，在高性能、高可用、低耦合等系统架构中扮演着重要作用。可用于异步通信、削峰填谷、解耦系统、数据缓存等多种业务场景。本文是关于消息队列（MQ）选型和常见问题的精心整理。在这篇文章中，我嗯将详细介绍消息队列的概念、作用以及如何选择适合自己需求的消息队列系统。</p>
+<p><img src="https://vqianxiao.github.io/blog/images/mq/mq1.png"></p>
+<h1 id="1-概诉"><a href="#1-概诉" class="headerlink" title="1 概诉"></a>1 概诉</h1><p>消息队列是分布式系统中重要的中间件，在高性能、高可用、低耦合等系统架构中扮演着重要作用。分布式系统可以借助消息队列的能力，轻松实现以下功能：</p>
+<ul>
+<li>解耦：将一个流程的上下游拆解开，上游专注于生产消息，下游专注于处理消息；</li>
+<li>广播：上游生产的消息可以轻松被多个下游服务处理；</li>
+<li>缓冲：应对突发流量，消息队列扮演缓冲器的作用，保护下游服务，使其可以根据自身的实际消费能力处理消息；</li>
+<li>异步：上游发送消息后可以马上返回，下游可以异步处理消息；</li>
+<li>冗余：保留历史消息，处理失败或当出现异常时可以进行重试或者回溯，防止丢失；</li>
+</ul>
+<h1 id="2-架构简介"><a href="#2-架构简介" class="headerlink" title="2 架构简介"></a>2 架构简介</h1><h2 id="2-1-Kafka"><a href="#2-1-Kafka" class="headerlink" title="2.1 Kafka"></a>2.1 Kafka</h2><h3 id="2-1-1-系统架构"><a href="#2-1-1-系统架构" class="headerlink" title="2.1.1 系统架构"></a>2.1.1 系统架构</h3><p><img src="https://vqianxiao.github.io/blog/images/mq/mq2.png"><br>一个Kafka集群由多个Broker和一个ZooKeeper集群组成，Broker作为Kafka节点的服务器。同一个消息主题Topic可以由多个分区Partition组成，分区物理存储在Broker上。负载均衡考虑，同一个Topic的多个分区存储在多个不同的Broker上，为了提高可靠性，每个分区在不同的Broker都会存在副本。</p>
+<p>ZooKeeper是一个分布式开源的应用程序协调服务，可以实现统一命名服务、状态同步服务、集群管理、分布式应用配置项的管理等工作。Kafka里的ZooKeeper主要有以下几个作用：</p>
+<ul>
+<li>Broker注册，当有Broker故障的时候能及时感知。</li>
+<li>Topic注册，维护Topic各分区的各副本所在的Broker节点，以及对应leader/follower的角色。</li>
+<li>Consumer注册，维护消费者组的offset以及消费者与分区的对应关系，实现负载均衡。</li>
+</ul>
+<h3 id="2-1-2-基本术语"><a href="#2-1-2-基本术语" class="headerlink" title="2.1.2 基本术语"></a>2.1.2 基本术语</h3><p><strong>Producer:</strong> 消息生产者。一般情况下，一条消息会被发送到特定的主题上。通常情况下，写入的消息会通过轮询将消息写入各分区。生产者也可以通过设定消息key值将消息写入指定分区。写入分区的数据越均匀Kafka的性能才能更好发挥。</p>
+<p><strong>Topic:</strong> Topic是一个抽象的虚拟概念，一个集群可以有多个Topic，作为一类消息的标识。一个生产者将消息发送到Topic，消费者通过订阅Topic获取分区消息。</p>
+<p><strong>Partition:</strong><br>Partition是个物理概念，一个Topic对应一个或多个Partition。新消息会以追加的方式写入分区里，在同一个Partition里消息是有序的。Kafka通过分区，实现消息的冗余和伸缩性，以及支持物理上的并发读、写，大大提高了吞吐量。</p>
+<p><strong>Replicas:</strong><br>一个Partition有多个Replicas副本。这些副本保存在Broker，每个broker存储着成百上千个不同主题和分区的副本，存储的内容分为两种：master副本，每个Partition都有一个Master副本，所有内容的写入和消费都会经过Master副本；follower副本不处理任何客户端的请求，只同步master的内容进行复制。如果master发生了异常，很快会有一个follower成为新的master。</p>
+<p><strong>Consumer:</strong> 消息读取者。消费者订阅主题，并按照一定顺序读取消息。Kafka保证每个分区只能被一个消费者使用。</p>
+<p><strong>Offset:</strong> 偏移量是一种元数据，是不断递增的整数。在消息写入时Kafka会把它添加到消息里。在分区内偏移量是唯一的。消费过程中，会将最后读取的偏移量存储在Kafka中，消费者关闭偏移量不会丢失，重启会继续从上次位置开始消费。</p>
+<p><strong>Broker:</strong><br>独立的Kafka服务器。一个Topic有N个Partition，一个集群有N个Broker，那么每个Broker都会存储一个这个Topic的Partition。如果某个Topic有N个partition，集群有（N+M）个Broker，那么其中有N个Broker存储该Topic的一个Partition，剩下的M个Broker不存储该Topic的Partition数据。如果某个Topic有N个Partition，集群中broker数目少于N个，那么一个Broker存储该Topic的一个或多个Partition。在实际生产环境中，尽量避免这种情况的发生，这种情况容易导致Kafka集群数据不均衡。</p>
+<h2 id="2-2-Pulsar"><a href="#2-2-Pulsar" class="headerlink" title="2.2 Pulsar"></a>2.2 Pulsar</h2><h3 id="2-2-1-系统架构"><a href="#2-2-1-系统架构" class="headerlink" title="2.2.1 系统架构"></a>2.2.1 系统架构</h3><p><img src="https://vqianxiao.github.io/blog/images/mq/mq3.png"><br>Pulsar有三个重要的组件，Broker、BookKeeper和ZooKeeper，Broker是无状态服务，客户端需要连接到Broker上进行消息的传递。BookKeeper与ZoKeeper是有状态服务。<br>BookKeeper的节点叫Bookie，负责存储消息和游标，ZooKeeper存储Broker和Bookie的元数据。Pulsar以这种架构，实现存储和计算分离，Broker负责计算，Bookie负责有状态存储。<br><img src="https://vqianxiao.github.io/blog/images/mq/mq4.png"><br>Pulsar的多层架构影响了存储数据的方式。Pulsar将Topic分区划分为分片（Segment）,然后将这些分片存储在Apache<br>BookKeeper的存储节点上，以提高性能、可伸缩性和可用性。<br>Pulsar的分布式日志以分片为中心，借助扩展日志存储（通过Apache<br>bookKeeper）实现，内置分层存储支持，因此分片可以均匀地分布在存储节点上。由于与任一给定Topic相关的数据都不会与特定存储节点进行捆绑，因此很容易替换存储节点或扩缩容。另外，集群中最小或最慢的节点也不会成为存储或带宽的短板。</p>
+<h3 id="2-2-2-基本术语"><a href="#2-2-2-基本术语" class="headerlink" title="2.2.2 基本术语"></a>2.2.2 基本术语</h3><p><strong>Property:</strong> 代表租户，每个property都可以代表一个团队、一个功能、一个产品线。一个property可包含多个namespace，多租户是一种资源隔离手段，可以提高资源利用率。</p>
+<p><strong>Namespace:</strong><br>Pulsar的基本管理单元，在namespace级别可设置权限、消息TTL、Retention策略等。一个namespace里的所有topic都继承相同的设置。命名空间分为两种：本地命名空间，只在集群内可见；全局命名空间对多个集群可见。<br><img src="https://vqianxiao.github.io/blog/images/mq/mq5.png"></p>
+<p><strong>Producer:</strong> 数据生产方，负责创建消息并将消息投递到Pulsar中。</p>
+<p><strong>Consumer:</strong> 数据消费方，连接到Pulsar接收消息并进行相应的处理。</p>
+<p><strong>Broker:</strong> 无状态Proxy服务，负责接收消息、传递消息、集群负载均衡等操作，它对client屏蔽了服务端读写流程的复杂性，是保证数据一致性与数据负载均衡的重要角色。Broker不会持久化保存元数据。可以扩容但不能缩容。</p>
+<p><strong>BookKeeper:</strong><br>有状态，负责持久化存储消息。当集群扩容时，Pulsar会在新增BookKeeper和Segment（即BookKeeper的Ledger），不需要想kafka一样扩容时进行ReBalance。扩容结果时Fragments跨多个Bookies以带状分布，同一个Ledger的Fragments分布在多个Bookie上，导致读取和写入会在多个Bookies之间跳跃。</p>
+<p><strong>ZooKeeper:</strong> 存储Pulsar、BookKeeper的元数据，集群配置等信息，负责集群间的协调、服务发现等。</p>
+<p><strong>Topic:</strong> 用作从producer到consumer传输消息。Pulsar在Topic级别拥有一个leader<br>Broker，称之为拥有Topic的所有权，针对该Topic所有的R/W都经过该Broker完成。Topic的Ledger和Fragment之间映射关系等元数据存储在Zookeeper中，Pulsar Broker需要事实跟踪这些关系进行读写流程。</p>
+<p><strong>Ledger:</strong> 即Segment，Pulsar底层数据以Ledger的形式存储在BookKeeper上。是Pulsar删除的最小单位。</p>
+<p><strong>Fragment:</strong> 每个Ledger由若干个Fragment组成。</p>
+<h2 id="2-3-RocketMQ"><a href="#2-3-RocketMQ" class="headerlink" title="2.3 RocketMQ"></a>2.3 RocketMQ</h2><h3 id="2-3-1-系统框架"><a href="#2-3-1-系统框架" class="headerlink" title="2.3.1 系统框架"></a>2.3.1 系统框架</h3><p><img src="https://vqianxiao.github.io/blog/images/mq/mq6.png"><br>RocketMQ是阿里开源的消息中间件，它是一个开源的分布式消息传递和流式数据平台。总共有四大部分：NameServer，Broker，Producer，Consumer。</p>
+<p>NameServer主要用来管理brokers以及路由信息。broker服务器启动时会注册到NameServer上，并且两者之间保持心跳监测机制，以此来保证NameServer知道broker的存活状态。而且，每一台NameServer都存有全部的broker集群信息和生产者/消费者客户端的请求信息。</p>
+<p>Broker负载管理消息存储分发，主从数据同步，为消息建立索引，提供消息查询等能力。</p>
+<h3 id="2-3-2-基本术语"><a href="#2-3-2-基本术语" class="headerlink" title="2.3.2 基本术语"></a>2.3.2 基本术语</h3><p><strong>Topic:</strong> 一个Topic可以有0个、1个多个生产者向其发送消息，一个生产者也可以同时向不同的Topic发送消息。一个Topic也可以被0个、1个、多个消费者订阅。</p>
+<p><strong>Tag:</strong> 消息二级类型，可以为用户提供额外的灵活度，一条消息可以没有Tag。</p>
+<p><strong>Producer:</strong> 消息生产者。</p>
+<p><strong>Broker:</strong> 存储消息，以Topic为纬度轻量级的队列；转发消息，单个Broker节点与所有的NameServer节点保持长连接及心跳，会定时将Topic信息注册到NameServer。</p>
+<p><strong>Consumer:</strong> 消息消费者，负责接收并消费消息。</p>
+<p><strong>MessageQueue:</strong> 消息的物理管理单位，一个Topic可以有多个Queue，Queue的的引入是西安了水平扩展的能力。</p>
+<p><strong>NameServer:</strong> 负责对元数据的管理，包括Topic和路由信息，每个NameServer之间是没有通信的。</p>
+<p><strong>Group:</strong> 一个组可以订阅多个Topic，ProducerGroup、ConsumerGroup分别是一类生产者和一类消费者。</p>
+<p><strong>Offset:</strong> 通过Offset访问存储单元，RocketMQ中所有消息都是持久化的，且存储单元定长。Offset为Java Long类型，理论上100年内不会溢出，所以认为Message Queue是无限长的数据，Offset是下标。</p>
+<p><strong>Consumer:</strong> 支持PUSH和PULL两种消费模式，支持集群消费和广播消费。</p>
+<h2 id="2-4-RabbitMQ"><a href="#2-4-RabbitMQ" class="headerlink" title="2.4 RabbitMQ"></a>2.4 RabbitMQ</h2><h3 id="2-4-1-系统框架"><a href="#2-4-1-系统框架" class="headerlink" title="2.4.1 系统框架"></a>2.4.1 系统框架</h3><p><img src="https://vqianxiao.github.io/blog/images/mq/mq7.png"><br>RabbitMQ基于AMQP协议来实现，主要由Exchange和Queue两部分组成，然后通过RoutingKey关联起来，消息投递到Exchange然后通过Queue接收。</p>
+<h3 id="2-4-2-基本术语"><a href="#2-4-2-基本术语" class="headerlink" title="2.4.2 基本术语"></a>2.4.2 基本术语</h3><p><strong>Broker:</strong> 接收客户端连接实体，实现AMQP消息队列和路由功能。</p>
+<p><strong>Virtual Host:</strong> 是一个虚拟概念，权限控制的最小单位。一个Virtual Host里包含多个Exchange和Queue。</p>
+<p><strong>Exchange:</strong> 接收消息生产者的消息并将消息转发到队列。发送消息时根据不同ExchangeType决定路由规则，ExchangeType常用的有：direct、fanout和topic三种。</p>
+<p><strong>Message Queue:</strong> 消息队列，存储被消费的消息。</p>
+<p><strong>Message:</strong> 由Header和Body组成，Header是生产者添加的各种属性，包含Message是否持久化、哪个MessageQueue接收、优先级。Body是具体的消息内容。</p>
+<p><strong>Binding:</strong> Binding连接起了Exchange和Message Queue。在服务器运行时，会生成一张路由表，这张路由表上记录者MessageQueue的条件和BindingKey值。当Exchange收到消息后，会解析消息中的Header得到BindingKey，并根据路由表和ExchangeType将消息发送到对应的MessageQueue。最终的匹配模式是由ExchangeType决定。</p>
+<p><strong>Connection:</strong> 在Broker和客户端之间的TCP连接。</p>
+<p><strong>Channel:</strong> 信道。Broker和客户端只有tcp连接是不能发送消息的，必须创建信道。AMQP协议规定只有通过Channel才能执行AMQP命令。一个Connection可以包含多个Channel。之所以需要建立Channel，是因为每个TCP连接都是很宝贵的。如果每个客户端、每个线程都需要和Broker交互，都需要维护一个TCP连接的话是很耗费机器资源的，一般建议共享Connection。RabbitMQ不建议客户端线程之间共享Channel，至少保证同一Channel发消息是串行的。</p>
+<p><strong>Command:</strong> AMQP命令，客户端通过Command来完成和AMQP服务器的交互。</p>
+<h2 id="2-5-NSQ"><a href="#2-5-NSQ" class="headerlink" title="2.5 NSQ"></a>2.5 NSQ</h2><h3 id="2-5-1-系统框架"><a href="#2-5-1-系统框架" class="headerlink" title="2.5.1 系统框架"></a>2.5.1 系统框架</h3><p><img src="https://vqianxiao.github.io/blog/images/mq/mq8.png"><br>NSQ主要有nsqlookup、nsqd两部分组成:</p>
+<ul>
+<li>Nsqlookup为守护进程，负责管理拓扑信息并提供发现服务。客户端通过查询nsqlookupd获取指定Topic所在的nsqd节点。nsqd往nsqlookup上注册和广播自身topic和channel的信息。</li>
+<li>nsqd在服务端运行的守护进程，负责接收，排队，投递消息给客户端。</li>
+</ul>
+<p>NSQ由3个守护进程组成：</p>
+<ul>
+<li>nsqd是接收、队列和传送消息到客户端的守护进程。</li>
+<li>nsqlookupd是管理的拓扑信息，并提供了最终一致发现服务的守护进程。客户端通过查询nsqlookupd获取指定Topic所在的nsqd节点。nsqd往nsqlookup上注册和广播自身topic和channel的信息。</li>
+<li>nsqadmin是一个WebUI来实时监控集群（和执行各种管理任务）。</li>
+</ul>
+<h1 id="3选型要点"><a href="#3选型要点" class="headerlink" title="3选型要点"></a>3选型要点</h1><h2 id="3-1选型参考"><a href="#3-1选型参考" class="headerlink" title="3.1选型参考"></a>3.1选型参考</h2><ul>
+<li>消息顺序：发送到队列的消息，消费时是否可以保证消费的顺序。</li>
+<li>伸缩：当消息队列性能有问题，比如消费太慢，是否可以快速支持扩容；当消费队列过多，浪费系统资源，是否可以支持缩容。</li>
+<li>消息留存：消息消费成功后，是否还会继续保留在消息队列。</li>
+<li>容错性：当一条消息消费失败后，是否有一些机制，保证这条消息一定能成功，比如异步第三方退款消息，需要保证这条消息消费掉，才能确定给用户退款成功，所以必须保证这条消息消费的准确性。</li>
+<li>消息可靠性：是否会存在丢消息的情况，比如有A/B两个消息，最后只有B消息能消费，A消息丢失</li>
+<li>消息时序：主要包括“消息存活时间”和“延迟消息”</li>
+<li>吞吐量：支持的最高并发数</li>
+<li>消息路由：根据路由规则，只订阅匹配路由规则的消息，比如有A/B两者规则的消息，消费者可以只订阅A消息，B消息不会消费。</li>
+</ul>
+<h2 id="3-2消息队列对比"><a href="#3-2消息队列对比" class="headerlink" title="3.2消息队列对比"></a>3.2消息队列对比</h2><p><img src="https://vqianxiao.github.io/blog/images/mq/mq9.png"><br><img src="https://vqianxiao.github.io/blog/images/mq/mq10.png"></p>
+<h1 id="4功能剖析"><a href="#4功能剖析" class="headerlink" title="4功能剖析"></a>4功能剖析</h1><h2 id="4-1消费推拉模式"><a href="#4-1消费推拉模式" class="headerlink" title="4.1消费推拉模式"></a>4.1消费推拉模式</h2><p>客户端消费者获取消息的方式，Kafka和RocketMQ是通过长轮训Pull的方式拉取消息，RabbitMQ、Pulsar、NSQ都是通过Push的方式。<br>pull类型的消息队列更适合高吞吐量的场景，允许消费者自己进行流量控制，根据消费者实际的消费能力去获取消息。而push类型的消息队列，实时性更好，但需要有一套良好的流控策略(backpressure)当消费者消费能力不足时，减少push的消费数量，避免压垮消费端。</p>
+<h2 id="4-2延迟队列"><a href="#4-2延迟队列" class="headerlink" title="4.2延迟队列"></a>4.2延迟队列</h2>
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/blog/tags/%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/" rel="tag"># 消息队列</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/blog/2022/04/16/%E6%97%A5%E5%BF%97%E9%98%BB%E5%A1%9E%E5%AF%BC%E8%87%B4%E9%87%8D%E5%90%AF%E9%97%AE%E9%A2%98%E6%8E%92%E6%9F%A5/" rel="prev" title="日志阻塞导致重启问题排查">
+      <i class="fa fa-chevron-left"></i> 日志阻塞导致重启问题排查
+    </a></div>
+      <div class="post-nav-item"></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#1-%E6%A6%82%E8%AF%89"><span class="nav-number">1.</span> <span class="nav-text">1 概诉</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#2-%E6%9E%B6%E6%9E%84%E7%AE%80%E4%BB%8B"><span class="nav-number">2.</span> <span class="nav-text">2 架构简介</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#2-1-Kafka"><span class="nav-number">2.1.</span> <span class="nav-text">2.1 Kafka</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#2-1-1-%E7%B3%BB%E7%BB%9F%E6%9E%B6%E6%9E%84"><span class="nav-number">2.1.1.</span> <span class="nav-text">2.1.1 系统架构</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-1-2-%E5%9F%BA%E6%9C%AC%E6%9C%AF%E8%AF%AD"><span class="nav-number">2.1.2.</span> <span class="nav-text">2.1.2 基本术语</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2-2-Pulsar"><span class="nav-number">2.2.</span> <span class="nav-text">2.2 Pulsar</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#2-2-1-%E7%B3%BB%E7%BB%9F%E6%9E%B6%E6%9E%84"><span class="nav-number">2.2.1.</span> <span class="nav-text">2.2.1 系统架构</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-2-2-%E5%9F%BA%E6%9C%AC%E6%9C%AF%E8%AF%AD"><span class="nav-number">2.2.2.</span> <span class="nav-text">2.2.2 基本术语</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2-3-RocketMQ"><span class="nav-number">2.3.</span> <span class="nav-text">2.3 RocketMQ</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#2-3-1-%E7%B3%BB%E7%BB%9F%E6%A1%86%E6%9E%B6"><span class="nav-number">2.3.1.</span> <span class="nav-text">2.3.1 系统框架</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-3-2-%E5%9F%BA%E6%9C%AC%E6%9C%AF%E8%AF%AD"><span class="nav-number">2.3.2.</span> <span class="nav-text">2.3.2 基本术语</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2-4-RabbitMQ"><span class="nav-number">2.4.</span> <span class="nav-text">2.4 RabbitMQ</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#2-4-1-%E7%B3%BB%E7%BB%9F%E6%A1%86%E6%9E%B6"><span class="nav-number">2.4.1.</span> <span class="nav-text">2.4.1 系统框架</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-4-2-%E5%9F%BA%E6%9C%AC%E6%9C%AF%E8%AF%AD"><span class="nav-number">2.4.2.</span> <span class="nav-text">2.4.2 基本术语</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2-5-NSQ"><span class="nav-number">2.5.</span> <span class="nav-text">2.5 NSQ</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#2-5-1-%E7%B3%BB%E7%BB%9F%E6%A1%86%E6%9E%B6"><span class="nav-number">2.5.1.</span> <span class="nav-text">2.5.1 系统框架</span></a></li></ol></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#3%E9%80%89%E5%9E%8B%E8%A6%81%E7%82%B9"><span class="nav-number">3.</span> <span class="nav-text">3选型要点</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#3-1%E9%80%89%E5%9E%8B%E5%8F%82%E8%80%83"><span class="nav-number">3.1.</span> <span class="nav-text">3.1选型参考</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#3-2%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97%E5%AF%B9%E6%AF%94"><span class="nav-number">3.2.</span> <span class="nav-text">3.2消息队列对比</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#4%E5%8A%9F%E8%83%BD%E5%89%96%E6%9E%90"><span class="nav-number">4.</span> <span class="nav-text">4功能剖析</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#4-1%E6%B6%88%E8%B4%B9%E6%8E%A8%E6%8B%89%E6%A8%A1%E5%BC%8F"><span class="nav-number">4.1.</span> <span class="nav-text">4.1消费推拉模式</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#4-2%E5%BB%B6%E8%BF%9F%E9%98%9F%E5%88%97"><span class="nav-number">4.2.</span> <span class="nav-text">4.2延迟队列</span></a></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">言风</p>
+  <div class="site-description" itemprop="description">让自己更值钱，你值得更好的自己</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/blog/archives/">
+        
+          <span class="site-state-item-count">39</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+        <span class="site-state-item-count">6</span>
+        <span class="site-state-item-name">categories</span>
+      </div>
+      <div class="site-state-item site-state-tags">
+        <span class="site-state-item-count">7</span>
+        <span class="site-state-item-name">tags</span>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2024</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">言风</span>
+</div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://muse.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Muse</a>
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/blog/lib/anime.min.js"></script>
+  <script src="/blog/lib/velocity/velocity.min.js"></script>
+  <script src="/blog/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/blog/js/utils.js"></script>
+
+<script src="/blog/js/motion.js"></script>
+
+
+<script src="/blog/js/schemes/muse.js"></script>
+
+
+<script src="/blog/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>
